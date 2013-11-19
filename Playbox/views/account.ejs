@@ -1,0 +1,12 @@
+<h1>Facebook details</h1>
+<h2>Details</h2>
+<img src="https://graph.facebook.com/<%= user.id %>/picture">
+<p>ID: <%= user.id %></p>
+<p>Username: <%= user.username %></p>
+<p>Name: <%= user.displayName %></p>
+<p>Gender: <%= user.gender %></p>
+<p>Email Address: <%= JSON.stringify(user.emails) %></p>
+<p>Profile URL: <a href="<%= user.profileUrl %>">link</a></p>
+<p>Picture <%= JSON.stringify(user.json) %></p><br><br>
+<h2>Friends List</h2>
+JSON.stringify("https://graph.facebook.com/<%= user.id %>/friends")
