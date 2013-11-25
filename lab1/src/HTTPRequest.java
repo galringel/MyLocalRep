@@ -3,7 +3,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -155,33 +154,6 @@ public class HTTPRequest extends HTTPMessage {
 	}
 
 	/**
-	 * Parse the value of a cookie header. The results are added to the
-	 * {@link #cookies} map (cookies that already appear in the map have their
-	 * values replaced).
-	 * 
-	 * @param line
-	 *            the line to parse (this is the value of the "Cookie:" header).
-	 * @return true if parsing completed successfully.
-	 */
-
-	boolean parseCookieHeader(String line) {
-
-		// Checks if the input is empty or null.
-		if (line == null || line.length() == 0) {
-			return false;
-		}
-
-		// Using regex pattern to parse the cookie.
-		List<AVPair> pairs = AVPair.parseAvPairs(line);
-
-		// Puts each cookie at the cookie map.
-		for (AVPair pair : pairs) {
-			cookies.put(pair.attr.toLowerCase(), pair.value);
-		}
-		return true;
-	}
-
-	/**
 	 * Parse a query as a series of name=value pairs separated by ampersands.
 	 * 
 	 * @param query
@@ -286,13 +258,6 @@ public class HTTPRequest extends HTTPMessage {
 
 				// Reads the headers from the input HTTPStream.
 				this.readHeaders(in);
-
-				// Checks if the cookie header exist.
-				if (this.getHeader(HDR_COOKIE) != null) {
-
-					// Parse the CookieHeader
-					this.parseCookieHeader(this.getHeader(HDR_COOKIE));
-				}
 
 				// Checks if the host header exists.
 				if (this.getHeader(HDR_HOST) != null) {
