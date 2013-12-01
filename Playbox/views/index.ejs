@@ -1,0 +1,43 @@
+<script type="text/javascript">
+
+    // Hack to remove facebook's bug ugly : "#_=_"
+    // http://stackoverflow.com/questions/7131909/facebook-callback-appends-to-return-url
+    if (window.location.hash == '#_=_'){
+
+        // Check if the browser supports history.replaceState.
+        if (history.replaceState) {
+
+            // Keep the exact URL up to the hash.
+            var cleanHref = window.location.href.split('#')[0];
+
+            // Replace the URL in the address bar without messing with the back button.
+            history.replaceState(null, null, cleanHref);
+        } else {
+            // Well, you're on an old browser, we can get rid of the _=_ but not the #.
+            window.location.hash = '';
+        }
+
+    }
+</script>
+<% if (!user) { %>
+
+	<h2>Welcome! Please log in.</h2>
+    <a href="login">Login Page</a>
+<% } else { %>
+	<h2>Hello, <%= user.username %>.</h2>
+    <a href="account">Go to account details</a><br>
+    <a href="logout">Logout</a><br>
+
+    <h3>Rest API functions</h3>
+    <a href="/chips/getChips">Chips balance</a><br>
+    <a href="/profile/getProfile">User Profile</a><br>
+    <a href="/tables/leave">Leave a table</a><br>
+    <a href="/tables/getTables">Get open tables</a><br><br>
+
+    <b> Join a table: </b> <br>
+    <form action="/tables/join" method="post">
+        Table Id: <input type="text" name="table_id" value="1" /><br>
+        User Id: <input type="text" name="user_id" value="11" /><br>
+        <input type="submit" name="submit" /><br>
+    </form>
+<% } %>
