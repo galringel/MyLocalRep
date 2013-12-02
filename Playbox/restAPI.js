@@ -63,22 +63,22 @@ function joinATable(res, params) {
                 if (result) {
                     console.log("user was found in a table... removing...");
                     // User is found, we need to remove
-                    db.removeUserFromTable(user_id, function (err) {
+                    db.removeUserFromTable(user_id, params.token, function (err) {
                         if (err) {
                             console.log(err);
                             throw err;
                         } else {
 
                             console.log("user removed from old table... inserting to a new table");
-                            db.addUserToTable(user_id, params.table_id);
-                            console.log("user_id = [" + params.user_id + "] was added successfully to table_id=[" +
+                            db.addUserToTable(user_id, params.token, params.table_id);
+                            console.log("user_id = [" + user_id + "] was added successfully to table_id=[" +
                                 params.table_id + "]");
                             res.json({'Result' : 'OK, user added'});
                         }
                     });
                 } else {
-                    db.addUserToTable(user_id, params.table_id);
-                    console.log("user_id = [" + params.user_id + "] was added successfully to table_id=[" +
+                    db.addUserToTable(user_id, params.token, params.table_id);
+                    console.log("user_id = [" + user_id + "] was added successfully to table_id=[" +
                         params.table_id + "]");
                     res.json({'Result' : 'OK, user added'});
                 }
@@ -104,7 +104,7 @@ function leaveATable(res, params) {
             res.json({'error' : 'token did not match to any user...'});
         } else {
             // User is found, we need to remove
-            db.removeUserFromTable(result, token, function (err, result) {
+            db.removeUserFromTable(result, params.token, function (err, result) {
                 if (err) {
                     console.log(err);
                     throw err;

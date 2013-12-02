@@ -441,6 +441,7 @@ function getChipsBalanceById(user_id, token, callback) {
  *
  * @param user_id
  * @param value
+ * @param token
  */
 function updateChipsBalanceById(user_id, token, value) {
     var connection = connectToDB();
