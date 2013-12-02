@@ -8,9 +8,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * A class representing a complete, parsed HTTP Request
+ * This class is in charge of parsing a HTTP request connection
+ * It parses the following:
+ * - Request method
+ * - Request uri
+ * - Request query parameters
+ * - Request headers
+ * - Request Body (if it is a post)
+ * - Request Cookies
  * 
- * @author 
+ * It uses a regex to validate the first REQUEST line,
+ * and then keep parsing all the headers and store them in the appropriate variables
+ * 
+ * @author @author Omri Hering 026533067 & Gal Ringel 300922424
  * 
  */
 public class HTTPRequest extends HTTPMessage {
@@ -27,181 +37,149 @@ public class HTTPRequest extends HTTPMessage {
 		OTHER
 	};
 
+	// Request method parsed (see enum)
 	Method method;
 
-	/**
-	 * The path portion of the request URI.
-	 */
+	// Request URI
 	String path;
 
-	/**
-	 * The query portion of the request URI
-	 */
+	// Request URI parameters
 	String query;
 
-	/**
-	 * The host for which this method was intended. null means the default host
-	 * (no host header was provided).
-	 */
+	// Request host header
 	String host;
 	
-	/**
-	 * Hold the first line of the request packet
-	 */
+	// Full request first line header ([method] [path][query] [http version])
 	String requestTitle;
 
-	/**
-	 * Cookies supplied in the request. This field contains a map from cookie
-	 * names to cookie values.
-	 */
-	Map<String, String> cookies;
-
-	/**
-	 * Parameters supplied in the request. This field contains a map from
-	 * parameter names to values.
-	 */
+	// Request parameters stored in Map for better performance later
 	Map<String, String> params;
 
+	/**
+	 * Ctor
+	 */
 	public HTTPRequest() {
-		super(); // Not really needed
-		method = Method.OTHER;
-		cookies = new HashMap<String, String>();
-		params = new HashMap<String, String>();
+		
+		// Init default parameters
+		this.method = Method.OTHER;
+		this.params = new HashMap<String, String>();
 	}
 
 	/**
-	 * Return the request method.
+	 * Return the request method parsed.
 	 * 
 	 * @return
 	 */
 	public Method getMethod() {
-		return method;
+		return this.method;
 	}
 
 	/**
-	 * Return the request path.
+	 * Return the request URI parsed.
 	 * 
 	 * @return
 	 */
 	public String getPath() {
-		return path;
+		return this.path;
 	}
 	
 	/**
-	 * Return the request title.
+	 * Return the full request title first line
 	 * 
 	 * @return
 	 */
 	public String getRequestTitle() {
-		return requestTitle;
+		return this.requestTitle;
 	}
 
 	/**
-	 * Return the request query.
+	 * Return the request query string (hold all the request parameters).
 	 * 
 	 * @return
 	 */
 	public String getQuery() {
-		return query;
+		return this.query;
 	}
 
 	/**
-	 * Return the request version.
+	 * Return the request HTTP version.
 	 * 
 	 * @return
 	 */
 	public String getVersion() {
-		return version;
+		return this.version;
 	}
 
 	/**
-	 * Return the request host.
+	 * Return the request host header.
 	 * 
 	 * @return
 	 */
 	public String getHost() {
-		return host;
+		return this.host;
 	}
 
-	/**
-	 * Return the value of a cookie. Cookie names are case insensitive.
-	 * 
-	 * @param cookie
-	 *            the name of the cookie
-	 * @return the value of the cookie, or null if the cookie wasn't supplied.
-	 */
-	public String getCookie(String cookie) {
-		return cookies.get(cookie.toLowerCase());
-	}
 
 	/**
-	 * Return the value of a parameter. Parameter names are case sensitive.
+	 * Gets the request parameter name and return it's value
 	 * 
-	 * @param param
-	 * @return the value of the parameter, or null if it wasn't supplied.
+	 * @param param - request parameter name
+	 * @return parameter value, or null if the parameter isn't exists.
 	 */
 	public String getParam(String param) {
-		return params.get(param);
+		return this.params.get(param);
 	}
 
 	/**
-	 * Return the entire cookie map.
-	 * 
-	 * @return
-	 */
-	public Map<String, String> getCookies() {
-		return cookies;
-	}
-
-	/**
-	 * Parse a query as a series of name=value pairs separated by ampersands.
+	 * Gets a full URI query which hold the the request parameters
+	 * Parse it into a map of key/value.
+	 * key = parameter name
+	 * value = parameter value
 	 * 
 	 * @param query
 	 */
 	void parseParameters(String query) {
 
-		// Puts every part of the input string in string array
-		// Splits at "&" char.
+		// parameters are supplied with '&' between them so we split by it 
 		String[] parameters = query.split("&");
 
-		// Each parameter at the array splits by the "=" char
+		// iterate each parameter found
 		for (String param : parameters) {
 
-			// Puts in another array.
+			// each parameter is given as "name=value", so we split by '='
 			String[] keys = param.split("=");
 
-			// Check that the there are two parts at the array.
+			// Validates the the current parameter is valid (name=value)
+			// If not, we skip it.
 			if (keys.length > 1) {
 
-				// Handles the decode method exceptions
 				try {
-
-					// Puts in the parameters map in a decoded form (UTF-8).
-					params.put(keys[0], URLDecoder.decode(keys[1], "UTF-8"));
-				} catch (UnsupportedEncodingException e) {
+					// Decode parameter value as UTF-8 and add to the query parameters map
+					this.params.put(keys[0], URLDecoder.decode(keys[1], "UTF-8"));
+				} catch (UnsupportedEncodingException ex) {
+					
+					String exceptionString = "ERROR: could not parse parameter value as utf-8" + ex.getMessage();
+					System.err.println(exceptionString);
+					ServerLogger.getInstance().getLogger().info(exceptionString);
 				}
 			}
 		}
 	}
 
 	/**
-	 * Read and parse an HTTP request from an input stream.
+	 * Gets an inputStream of the request and parse it into our Request Object
 	 * 
-	 * @param in
-	 *            the InputStream used as input.
+	 * @param in - the InputStream used as input.
 	 * @return true if parsing completed correctly.
-	 * @throws EOFException
-	 *             if the stream ends before the request was read completely
-	 * @throws IOException
-	 *             if there was an I/O error.
+	 * @throws EOFException - if the stream ends before the request was read completely
+	 * @throws IOException - if there was an I/O error.
 	 */
-	public boolean parse(HTTPInputStream in) throws IOException {
-		boolean parseOk = true;
-
+	public boolean parseRequest (HTTPStreamParsingUtil in) {
+		
 		// Handles the EOF exception
 		try {
 
-			String request = HTTPInputStream.readLine(in);
+			String request = HTTPStreamParsingUtil.readLine(in);
 			if (request.isEmpty()) {
 				// Not a valid request
 				return false;
@@ -216,17 +194,9 @@ public class HTTPRequest extends HTTPMessage {
 				this.requestTitle = request;
 				
 				String requestMethod = matcher.group(1);
-				if (requestMethod.equals("GET")) {
-					method = Method.GET;
-				} else if (requestMethod.equals("POST")) {
-					method = Method.POST;
-				} else if (requestMethod.equals("HEAD")) {
-					method = Method.HEAD;
-				} else if (requestMethod.equals("OPTIONS")) {
-					method = Method.OPTIONS;
-				} else if (requestMethod.equals("TRACE")) {
-					method = Method.TRACE;
-				}
+				
+				// Find outs which request type is it
+				FindRequestType(requestMethod);
 				
 				// Checks whether the path or the query is not null.
 				if (matcher.group(2) != null && matcher.group(4) != null) {
@@ -251,8 +221,7 @@ public class HTTPRequest extends HTTPMessage {
 
 				// Update the Version.
 				this.version = matcher.group(5);
-				if (!this.version.equals(HTTP_VERSION11) || 
-						!this.version.equals(HTTP_VERSION11)) {
+				if (!this.version.equals(HTTP_VERSION11) && !this.version.equals(HTTP_VERSION10)) {
 					return false;
 				}
 
@@ -269,17 +238,64 @@ public class HTTPRequest extends HTTPMessage {
 				// Checks if the content header length is exist.
 				if (this.getHeader(HDR_CONTENT_LENGTH) != null) {
 
+					// Try to parse request body
+					if (!this.readBody(in)) {
+						return false;
+					}
+					
 					// Update the Body and parse query parameters
-					this.readBody(in);
 					String postQuery = new String(this.getBody());
 					parseParameters(postQuery);
 				}
+				
+				return true;
 
-			} else {
-				parseOk = false;
 			}
-		} catch (EOFException e) {
+			
+			// Request regex did not match first line
+			return false;
+			
 		}
-		return parseOk;
+		catch (EOFException ex) {
+			// It's ok (Get with no body for example...)
+			return true;
+		}
+		catch (IOException ex) {
+			
+			String exceptionString = "ERROR: Request is bad. closing connection!" + ex.getMessage();
+			System.err.println(exceptionString);
+			ServerLogger.getInstance().getLogger().info(exceptionString);
+			return false;
+		}
+	}
+
+	/**
+	 * Gets the request method which was matched from the request header
+	 * And checks which type is it
+	 * @param requestMethod
+	 */
+	private void FindRequestType(String requestMethod) {
+		switch (requestMethod) {
+			case "GET": {
+				method = Method.GET;
+				break;
+			}
+			case "POST": {
+				method = Method.POST;
+				break;
+			}
+			case "HEAD": {
+				method = Method.HEAD;
+				break;
+			}
+			case "OPTIONS": {
+				method = Method.OPTIONS;
+				break;
+			}
+			case "TRACE": {
+				method = Method.TRACE;
+				break;
+			}
+		}
 	}
 }

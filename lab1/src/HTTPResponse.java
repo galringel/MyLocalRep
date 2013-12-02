@@ -1,46 +1,77 @@
 import java.io.IOException;
 import java.io.PrintStream;
+import java.math.BigInteger;
 import java.util.Map;
+import java.util.Random;
 
 /**
+ * This class is in charge of creating a HTTP Response 
+ * It support the following response codes:
+ * - 200, 301, 400, 404, 500, 501
+ * - BONUS: we added a 301 redirect response
+ * - BONUS: we added a set-cookie of machineId to  computers that already visited our site
  * 
- * @author 
- *
+ * This class knows to generate a response from a GENERIC POST request (from any <form> type)
+ * This class knows to generate a "ALLOW HEADER" in case of OPTIONS request
+ * 
+ * @author @author Omri Hering 026533067 & Gal Ringel 300922424
+ * 
  */
 public class HTTPResponse extends HTTPMessage {
+	
 	public static final String STATUS_200 = "OK";
-	public static final String STATUS_303 = "See Other";
+	public static final String STATUS_301 = "Moved Permanently";
 	public static final String STATUS_400 = "Bad Request";
 	public static final String STATUS_404 = "Not Found";
 	public static final String STATUS_500 = "Internal Server Error";
 	public static final String STATUS_501 = "Not Implemented";
-	public static final String HDR_LOCATION = "Location";
-	public static final String HDR_SETCOOKIE = "Set-Cookie";
+	
+	/* For bonus */
+	public static final String HEADER_LOCATION = "Location";
+	public static final String HEADER_SETCOOKIE = "Set-Cookie";
 
+	/* private members */
 	int statusCode;
 	String statusPhrase;
 
+	/**
+	 * ctor, get HTTP version and set it.
+	 * @param version
+	 */
 	public HTTPResponse(String version) {
 		super();
 		this.version = version;
 	}
 
+	/**
+	 * Gets the response status code
+	 * @return
+	 */
 	public int getStatusCode() {
-		return statusCode;
+		return this.statusCode;
 	}
 
+	/**
+	 * Gets the response status phrase
+	 * @return
+	 */
 	public String getStatusPhrase() {
-		return statusPhrase;
+		return this.statusPhrase;
 	}
 	
 
-	public void setStatusCode(int code, String phrase) {
-		statusCode = code;
-		statusPhrase = phrase;
+	/**
+	 * Gets HTTP code and phrase and updates it
+	 * @param code
+	 * @param phrase
+	 */
+	public void setStatusCode(int httpCode, String httpPhrase) {
+		this.statusCode = httpCode;
+		this.statusPhrase = httpPhrase;
 	}
 	
 	/**
-	 * 
+	 * Generate a generic HTML response body with desired message
 	 * @param msg
 	 * @return
 	 */
@@ -60,8 +91,8 @@ public class HTTPResponse extends HTTPMessage {
 	}
 	
 	/**
-	 * 
-	 * @param parameters
+	 * Generate a generic HTML POST response body with a given parameters from the <form>
+	 * @param parameters - got form the client
 	 * @return
 	 */
 	String generatePOST_HTML(Map<String,String> parameters) {
@@ -99,7 +130,17 @@ public class HTTPResponse extends HTTPMessage {
 	}
 	
 	/**
-	 * 
+	 * Generate machineId to remember users that came back
+	 * We will use it with "Set-Cookie"
+	 * @return
+	 */
+	public String generateMachineId()
+	{
+	    return new BigInteger(130, new Random()).toString(32);
+	}
+	
+	/**
+	 * Generate a TRACE HTML response with all the original request metadata
 	 * @param headers
 	 * @param requestUrI
 	 * @return
@@ -127,7 +168,7 @@ public class HTTPResponse extends HTTPMessage {
 	}
 	
 	/**
-	 * 
+	 * Build a "ALLOW" Header for the request type "OPTIONS"
 	 * @return
 	 */
 	 String generateAllowHeader() {
@@ -143,8 +184,7 @@ public class HTTPResponse extends HTTPMessage {
 	}
 	
 	/**
-	 * 
-	 * @param res
+	 * Generate a 501 response with all the relevant headers
 	 */
 	void generate501() {
 
@@ -155,7 +195,16 @@ public class HTTPResponse extends HTTPMessage {
 	}
 	
 	/**
-	 * 
+	 * Generate a 301 response with all the relevant headers
+	 */
+	void generate301(String redirectURL) {
+		
+		setStatusCode(301, STATUS_301);
+		setHeader(HEADER_LOCATION, redirectURL);
+	}
+	
+	/**
+	 * Generate a 200 OK response with with a given body and relevant headers
 	 * @param body
 	 */
 	void generate200OK(byte[] body) {
@@ -166,13 +215,22 @@ public class HTTPResponse extends HTTPMessage {
 		}
 		
 		setStatusCode(200, STATUS_200);
-		setHeader("content-type", "text/html");
 		setBody(body);
 	}
 	
 	/**
-	 * 
-	 * @param res
+	 * Gets a Cookie Name and Cookie Value and add a "Set-Cookie" header with it.
+	 * @param cookieName
+	 * @param cookieValue
+	 */
+	void setCookie(String cookieName, String cookieValue) {
+		
+		String cookieHeaderValue = cookieName + "=" + cookieValue;
+		setHeader("Set-Cookie", cookieHeaderValue);
+	}
+	
+	/**
+	 * Generate a 400 response with all the relevant headers
 	 */
 	void generate400() {
 
@@ -184,10 +242,7 @@ public class HTTPResponse extends HTTPMessage {
 	
 
 	/**
-	 * Generate a 404 not found response.
-	 * 
-	 * @param res
-	 * @param req
+	 * Generate a 404 response with all the relevant headers
 	 */
 	void generate404() {
 
@@ -198,10 +253,7 @@ public class HTTPResponse extends HTTPMessage {
 	}
 	
 	/**
-	 * Generate a 500 server error
-	 * 
-	 * @param res
-	 * @param req
+	 * Generate a 500 response with all the relevant headers
 	 */
 	void generate500() {
 
@@ -212,7 +264,7 @@ public class HTTPResponse extends HTTPMessage {
 	}
 	
 	/**
-	 * 
+	 * Gets the HTTP Response first line
 	 * @return
 	 */
 	String buildResponseFirstHeader() {
@@ -221,12 +273,15 @@ public class HTTPResponse extends HTTPMessage {
 		
 		sb.append(version + " ");
 		sb.append(getStatusCode() + " ");
-		sb.append(getStatusPhrase() + "\r\n");
+		sb.append(getStatusPhrase() + CRLF);
 		
 		return sb.toString();
 	}
 
 	@Override
+	/**
+	 * writes the response to the stream using super().write of HTTPMessage class
+	 */
 	public void write(PrintStream out, boolean isChunked) throws IOException {
 
 		// Write the first line of the response by message status.		
