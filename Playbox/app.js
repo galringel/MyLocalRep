@@ -283,8 +283,12 @@ app.on('close', function () {
 
 
 // ============================
-app.listen(3000);
-console.log("Server is up and running on port: 3000\r\n");
+app.listen(3000, function() {
+
+    console.log("Server is up and running on port: 3000\r\n");
+    db.CreateMySqlConnectionPool();
+});
+
 
 
 // Simple route middleware to ensure user is authenticated.

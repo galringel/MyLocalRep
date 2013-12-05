@@ -1,4 +1,6 @@
 /** Global variables **/
+var mysql;
+var mysqlPool;
 
 /**
  * formatting function to pad numbers to two digits.
@@ -25,30 +27,24 @@ Date.prototype.toMysqlFormat = function() {
 };
 
 /**
- * Open a connection to our mySQL database
- * @returns {*}
+ *
+ *
  */
-function connectToDB() {
+function CreateMySqlConnectionPool() {
 
-    var mysql = require('mysql');
-    var connection = mysql.createConnection({
+    mysql = require('mysql');
+    mysqlPool  = mysql.createPool({
         host     : 'localhost',
         user     : 'root',
         password : 'pring-1',
-        database : 'Playbox'
+        database : 'Playbox',
+        waitForConnections : true,
+        connectionLimit : 10,
+        queueLimit : 0
     });
 
     // In order to avoid SQL Injection attacks
-    connection.escape();
-
-    connection.connect(function(err) {
-        if (err) {
-            console.log(err);
-            throw err;
-        }
-    });
-
-    return connection;
+    mysqlPool.escape();
 }
 
 /**
@@ -56,16 +52,23 @@ function connectToDB() {
  */
 function getAllUsers() {
 
-    var connection = connectToDB();
-    connection.query('SELECT * from users_tbl', function(err, result) {
-        if (err) {
+    mysqlPool.getConnection(function (err, connection) {
+
+        if (err)  {
             console.log(err);
             throw err;
         }
 
-        //console.log('The result is: ', result[0]);
-        connection.end();
-        return result;
+        connection.query('SELECT * from users_tbl', function(err, result) {
+            connection.release();
+
+            if (err) {
+                console.log(err);
+                throw err;
+            }
+
+            return result;
+        });
     });
 }
 
@@ -74,30 +77,37 @@ function getAllUsers() {
  */
 function getUserProfile(user_id, token, callback) {
 
-    var connection = connectToDB();
-    var sqlGetProfile = "SELECT fb_first_name, fb_last_name from users_tbl where oauth_uid=?";
-    connection.query(sqlGetProfile, [user_id], function(err, result) {
-        if (err) {
+    mysqlPool.getConnection(function (err, connection) {
+
+        if (err)  {
             console.log(err);
             throw err;
         }
 
-        updateLoggedUsersActionDate(user_id, token, function(err) {
+        var sqlGetProfile = "SELECT fb_first_name, fb_last_name from users_tbl where oauth_uid=?";
+        connection.query(sqlGetProfile, [user_id], function(err, result) {
+
+            connection.release();
             if (err) {
                 console.log(err);
                 throw err;
             }
 
-            //connection.end();
+            updateLoggedUsersActionDate(user_id, token, function(err) {
+                if (err) {
+                    console.log(err);
+                    throw err;
+                }
 
-            console.log("getUserProfile was executed, user action timestamp logged");
+                console.log("getUserProfile was executed, user action timestamp logged");
+            });
+
+            if (result.length > 0) {
+                callback(false, result[0]);
+            } else {
+                callback(false, null);
+            }
         });
-
-        if (result.length > 0) {
-            callback(false, result[0]);
-        } else {
-            callback(false, null);
-        }
     });
 }
 
@@ -107,22 +117,30 @@ function getUserProfile(user_id, token, callback) {
  */
 function getOAuthUidByFacebookId(facebook_id) {
 
-    var connection = connectToDB();
-    var sqlGetOAuthUid = "SELECT oauth_uid from users_tbl WHERE fb_id=?";
-    connection.query(sqlGetOAuthUid, [facebook_id], function(err, result) {
-        if (err) {
+    mysqlPool.getConnection(function (err, connection) {
+
+        if (err)  {
             console.log(err);
             throw err;
         }
 
-        var oauth_uid = null;
-        if (result.length  > 0) {
-            // User is found in db
-            oauth_uid = result[0].oauth_uid;
-        }
+        var sqlGetOAuthUid = "SELECT oauth_uid from users_tbl WHERE fb_id=?";
+        connection.query(sqlGetOAuthUid, [facebook_id], function(err, result) {
 
-        connection.end();
-        return oauth_uid;
+            connection.release();
+            if (err) {
+                console.log(err);
+                throw err;
+            }
+
+            var oauth_uid = null;
+            if (result.length  > 0) {
+                // User is found in db
+                oauth_uid = result[0].oauth_uid;
+            }
+
+            return oauth_uid;
+        });
     });
 }
 
@@ -135,27 +153,34 @@ function getOAuthUidByFacebookId(facebook_id) {
  */
 function addUserToTable(user_id, token, table_id) {
 
-    var connection = connectToDB();
-    var values  = {
-        oauth_uid: user_id,
-        table_id : table_id
-    };
+    mysqlPool.getConnection(function (err, connection) {
 
-    connection.query('INSERT INTO baccarat_oauthid_tableid_mapping_tbl SET ?', values, function(err) {
-        if (err) {
+        if (err)  {
             console.log(err);
             throw err;
         }
 
-        connection.end();
+        var values  = {
+            oauth_uid: user_id,
+            table_id : table_id
+        };
 
-        updateLoggedUsersActionDate(user_id, token, function(err) {
+        connection.query('INSERT INTO baccarat_oauthid_tableid_mapping_tbl SET ?', values, function(err) {
+
+            connection.release();
             if (err) {
                 console.log(err);
                 throw err;
             }
 
-            console.log("getUserProfile was executed, user action timestamp logged");
+            updateLoggedUsersActionDate(user_id, token, function(err) {
+                if (err) {
+                    console.log(err);
+                    throw err;
+                }
+
+                console.log("getUserProfile was executed, user action timestamp logged");
+            });
         });
     });
 }
@@ -167,22 +192,30 @@ function addUserToTable(user_id, token, table_id) {
  */
 function isUserInATable(user_id, callback) {
 
-    var connection = connectToDB();
-    connection.query('SELECT table_id FROM baccarat_oauthid_tableid_mapping_tbl WHERE oauth_uid=?',
-        [user_id], function(err, result) {
+    mysqlPool.getConnection(function (err, connection) {
 
-        if (err) {
+        if (err)  {
             console.log(err);
             throw err;
         }
 
-        connection.end();
-        var res = false;
-        if (result.length > 0) {
-            res = true;
-        }
+        connection.query('SELECT table_id FROM baccarat_oauthid_tableid_mapping_tbl WHERE oauth_uid=?',
+            [user_id], function(err, result) {
 
-        callback(false, res);
+                connection.release();
+
+                if (err) {
+                    console.log(err);
+                    throw err;
+                }
+
+                var res = false;
+                if (result.length > 0) {
+                    res = true;
+                }
+
+                callback(false, res);
+        });
     });
 }
 
@@ -192,38 +225,44 @@ function isUserInATable(user_id, callback) {
  * @param token
  */
 function getOpenTables(token, callback) {
-    var connection = connectToDB();
-    connection.query('SELECT * FROM baccarat_tables_tbl', function(err, result) {
-        if (err) {
+
+    mysqlPool.getConnection(function (err, connection) {
+
+        if (err)  {
             console.log(err);
             throw err;
         }
 
-        connection.end();
-        getLoggedUserIdByToken(token, function(err, result) {
+        connection.query('SELECT * FROM baccarat_tables_tbl', function(err, result) {
 
+            connection.release();
             if (err) {
                 console.log(err);
                 throw err;
             }
 
-            connection.end();
+            getLoggedUserIdByToken(token, function(err, result) {
+                if (err) {
+                    console.log(err);
+                    throw err;
+                }
 
-            if (result == null) {
-                // user is not logged in, do nothing.
-            } else {
-                updateLoggedUsersActionDate(result, token, function(err) {
-                    if (err) {
-                        console.log(err);
-                        throw err;
-                    }
+                if (result == null) {
+                    // user is not logged in, do nothing.
+                } else {
+                    updateLoggedUsersActionDate(result, token, function(err) {
+                        if (err) {
+                            console.log(err);
+                            throw err;
+                        }
 
-                    console.log("getUserProfile was executed, user action timestamp logged");
-                });
-            }
+                        console.log("getUserProfile was executed, user action timestamp logged");
+                    });
+                }
+            });
+
+            callback(false, result);
         });
-
-        callback(false, result);
     });
 }
 
@@ -235,27 +274,32 @@ function getOpenTables(token, callback) {
  */
 function removeUserFromTable(user_id, token, callback) {
 
-    var connection = connectToDB();
-    var sqlRemoveUserFromTable = "DELETE FROM baccarat_oauthid_tableid_mapping_tbl WHERE oauth_uid=?";
-
-    connection.query(sqlRemoveUserFromTable, [user_id], function(err, result) {
-        if (err) {
+    mysqlPool.getConnection(function (err, connection) {
+        if (err)  {
             console.log(err);
             throw err;
         }
 
-        connection.end();
+        var sqlRemoveUserFromTable = "DELETE FROM baccarat_oauthid_tableid_mapping_tbl WHERE oauth_uid=?";
+        connection.query(sqlRemoveUserFromTable, [user_id], function(err, result) {
 
-        updateLoggedUsersActionDate(user_id, token, function(err) {
+            connection.release();
             if (err) {
                 console.log(err);
                 throw err;
             }
 
-            console.log("getUserProfile was executed, user action timestamp logged");
-        });
+            updateLoggedUsersActionDate(user_id, token, function(err) {
+                if (err) {
+                    console.log(err);
+                    throw err;
+                }
 
-        callback(false, result);
+                console.log("getUserProfile was executed, user action timestamp logged");
+            });
+
+            callback(false, result);
+        });
     });
 }
 
@@ -269,21 +313,28 @@ function removeUserFromTable(user_id, token, callback) {
  */
 function createANewGame(table_id, game_id, game_status, callback) {
 
-    var connection = connectToDB();
     var values  = {
         game_id: game_id,
         table_id : table_id,
         game_status : game_status
     };
 
-    connection.query('INSERT INTO baccarat_games_tbl SET ?', values, function(err, result) {
-        if (err) {
+    mysqlPool.getConnection(function (err, connection) {
+        if (err)  {
             console.log(err);
             throw err;
         }
 
-        connection.end();
-        callback(false, result);
+        connection.query('INSERT INTO baccarat_games_tbl SET ?', values, function(err, result) {
+
+            connection.release();
+            if (err) {
+                console.log(err);
+                throw err;
+            }
+
+            callback(false, result);
+        });
     });
 }
 
@@ -296,7 +347,6 @@ function createANewGame(table_id, game_id, game_status, callback) {
  */
 function updateLoggedUsersActionDate(oauth_uid, token, callback) {
 
-    var connection = connectToDB();
     var datetime = new Date().toMysqlFormat();
 
     // making sure client exists.
@@ -311,17 +361,26 @@ function updateLoggedUsersActionDate(oauth_uid, token, callback) {
             // do nothing.
             console.log("tried to update logged user timestamp but it didn't exists.");
         } else {
-            var sqlUpdateLoggedUserActionDate = "UPDATE logged_users_tbl SET last_action_date=? " +
-                "WHERE oauth_uid=? AND token=?";
 
-            connection.query(sqlUpdateLoggedUserActionDate, [datetime, oauth_uid, token], function(err, result) {
-                if (err) {
+            mysqlPool.getConnection(function (err, connection) {
+                if (err)  {
                     console.log(err);
                     throw err;
                 }
 
-                connection.end();
-                callback(false, result);
+                var sqlUpdateLoggedUserActionDate = "UPDATE logged_users_tbl SET last_action_date=? " +
+                    "WHERE oauth_uid=? AND token=?";
+
+                connection.query(sqlUpdateLoggedUserActionDate, [datetime, oauth_uid, token], function(err, result) {
+
+                    connection.release();
+                    if (err) {
+                        console.log(err);
+                        throw err;
+                    }
+
+                    callback(false, result);
+                });
             });
         }
     });
@@ -336,17 +395,22 @@ function updateLoggedUsersActionDate(oauth_uid, token, callback) {
  */
 function updateGameStatus(game_id, game_status) {
 
-    var connection = connectToDB();
-
-    // Updating the game id status
-    var sqlUpdateGameStatus = "UPDATE baccarat_games_tbl SET status = ? WHERE game_id = ?";
-    connection.query(sqlUpdateGameStatus, [game_status, game_id], function(err) {
-        if (err) {
+    mysqlPool.getConnection(function (err, connection) {
+        if (err)  {
             console.log(err);
             throw err;
         }
 
-        connection.end();
+        // Updating the game id status
+        var sqlUpdateGameStatus = "UPDATE baccarat_games_tbl SET status = ? WHERE game_id = ?";
+        connection.query(sqlUpdateGameStatus, [game_status, game_id], function(err) {
+
+            connection.release();
+            if (err) {
+                console.log(err);
+                throw err;
+            }
+        });
     });
 }
 
@@ -360,7 +424,6 @@ function updateGameStatus(game_id, game_status) {
  */
 function insertANewBet(user_id, game_id, table_id, bet_type, bet_value) {
 
-    var connection = connectToDB();
     var values  = {
         oauth_uid : user_id,
         game_id: game_id,
@@ -369,21 +432,27 @@ function insertANewBet(user_id, game_id, table_id, bet_type, bet_value) {
         bet_value : bet_value
     };
 
-    connection.query('INSERT INTO baccarat_bets_tbl SET ?', values, function(err) {
-        if (err) {
+    mysqlPool.getConnection(function (err, connection) {
+        if (err)  {
             console.log(err);
             throw err;
         }
+        connection.query('INSERT INTO baccarat_bets_tbl SET ?', values, function(err) {
 
-        connection.end();
-
-        updateLoggedUsersActionDate(user_id, function(err) {
+            connection.release();
             if (err) {
                 console.log(err);
                 throw err;
             }
 
-            console.log("getUserProfile was executed, user action timestamp logged");
+            updateLoggedUsersActionDate(user_id, function(err) {
+                if (err) {
+                    console.log(err);
+                    throw err;
+                }
+
+                console.log("getUserProfile was executed, user action timestamp logged");
+            });
         });
     });
 }
@@ -396,17 +465,22 @@ function insertANewBet(user_id, game_id, table_id, bet_type, bet_value) {
  */
 function updateABetWithResult(game_id, bet_result) {
 
-    var connection = connectToDB();
-
-    // Updating the game id status
-    var sqlUpdateBetResult = "UPDATE baccarat_bets_tbl SET bet_result = ? WHERE game_id = ?";
-    connection.query(sqlUpdateBetResult, [bet_result, game_id], function(err) {
-        if (err) {
+    mysqlPool.getConnection(function (err, connection) {
+        if (err)  {
             console.log(err);
             throw err;
         }
 
-        connection.end();
+        // Updating the game id status
+        var sqlUpdateBetResult = "UPDATE baccarat_bets_tbl SET bet_result = ? WHERE game_id = ?";
+        connection.query(sqlUpdateBetResult, [bet_result, game_id], function(err) {
+
+            connection.release();
+            if (err) {
+                console.log(err);
+                throw err;
+            }
+        });
     });
 }
 
@@ -418,27 +492,34 @@ function updateABetWithResult(game_id, bet_result) {
  */
 function getChipsBalanceById(user_id, token, callback) {
 
-    var connection = connectToDB();
-    var sqlGetChipsBalanceById = "SELECT balance from balance_info_tbl where oauth_uid=?";
-    connection.query(sqlGetChipsBalanceById, user_id, function(err, result) {
+    mysqlPool.getConnection(function (err, connection) {
         if (err)  {
             console.log(err);
             throw err;
         }
 
-        connection.end();
+        var sqlGetChipsBalanceById = "SELECT balance from balance_info_tbl where oauth_uid=?";
+        connection.query(sqlGetChipsBalanceById, user_id, function(err, result) {
 
-        updateLoggedUsersActionDate(user_id, token, function(err) {
-            if (err) {
+            connection.release();
+            if (err)  {
                 console.log(err);
                 throw err;
             }
 
-            console.log("getUserProfile was executed, user action timestamp logged");
-        });
+            updateLoggedUsersActionDate(user_id, token, function(err) {
+                if (err) {
+                    console.log(err);
+                    throw err;
+                }
 
-        callback(false, result[0].balance);
+                console.log("getUserProfile was executed, user action timestamp logged");
+            });
+
+            callback(false, result[0].balance);
+        });
     });
+
 }
 
 /**
@@ -448,21 +529,27 @@ function getChipsBalanceById(user_id, token, callback) {
  * @param token
  */
 function updateChipsBalanceById(user_id, token, value) {
-    var connection = connectToDB();
 
     // Gets the current chips balance
     var currentBalance = getChipsBalanceById(user_id, token, null);
     var newBalance = currentBalance - value;
 
-    // Updating token and last_entered date
-    var sqlUpdateFields = "UPDATE balance_info_tbl SET balance=? WHERE oauth_id=?";
-    connection.query(sqlUpdateFields, [user_id, newBalance], function(err) {
-        if (err) {
+    mysqlPool.getConnection(function (err, connection) {
+        if (err)  {
             console.log(err);
             throw err;
         }
 
-        connection.end();
+        // Updating token and last_entered date
+        var sqlUpdateFields = "UPDATE balance_info_tbl SET balance=? WHERE oauth_id=?";
+        connection.query(sqlUpdateFields, [user_id, newBalance], function(err) {
+
+            connection.release();
+            if (err) {
+                console.log(err);
+                throw err;
+            }
+        });
     });
 }
 
@@ -474,20 +561,27 @@ function updateChipsBalanceById(user_id, token, value) {
  */
 function addChipsToUserId (user_id, value, callback) {
 
-    var connection = connectToDB();
     var values  = {
         oauth_uid : user_id,
         balance : value
     };
 
-    connection.query('INSERT INTO balance_info_tbl SET ?', values, function(err, result) {
-        if (err) {
+    mysqlPool.getConnection(function (err, connection) {
+        if (err)  {
             console.log(err);
             throw err;
         }
 
-        connection.end();
-        callback(false, result);
+        connection.query('INSERT INTO balance_info_tbl SET ?', values, function(err, result) {
+
+            connection.release();
+            if (err) {
+                console.log(err);
+                throw err;
+            }
+
+            callback(false, result);
+        });
     });
 }
 
@@ -501,7 +595,6 @@ function addChipsToUserId (user_id, value, callback) {
 function addLoggedUser (user_id, token, user_agent, callback) {
 
     var current_date = new Date().toMysqlFormat();
-    var connection = connectToDB();
     var values  = {
         oauth_uid : user_id,
         token : token,
@@ -510,30 +603,44 @@ function addLoggedUser (user_id, token, user_agent, callback) {
         last_action_date : current_date
     };
 
-    connection.query('INSERT INTO logged_users_tbl SET ?', values, function(err, result) {
-        if (err) {
+    mysqlPool.getConnection(function (err, connection) {
+        if (err)  {
             console.log(err);
             throw err;
         }
 
-        connection.end();
-        callback(false, result);
+        connection.query('INSERT INTO logged_users_tbl SET ?', values, function(err, result) {
+
+            connection.release();
+            if (err) {
+                console.log(err);
+                throw err;
+            }
+
+            callback(false, result);
+        });
     });
 }
 
 function removeLoggedUser (token, callback) {
 
-    var connection = connectToDB();
-    var sqlRemoveLoggedUser = "DELETE FROM logged_users_tbl WHERE token=?";
-
-    connection.query(sqlRemoveLoggedUser, [token], function(err, result) {
-        if (err) {
+    mysqlPool.getConnection(function (err, connection) {
+        if (err)  {
             console.log(err);
             throw err;
         }
 
-        connection.end();
-        callback(false, result);
+        var sqlRemoveLoggedUser = "DELETE FROM logged_users_tbl WHERE token=?";
+        connection.query(sqlRemoveLoggedUser, [token], function(err, result) {
+
+            connection.release();
+            if (err) {
+                console.log(err);
+                throw err;
+            }
+
+            callback(false, result);
+        });
     });
 }
 
@@ -545,14 +652,19 @@ function removeLoggedUser (token, callback) {
  */
 function getLoggedUserIdByOAuthUid(oauth_uid, callback) {
 
-    var connection = connectToDB();
-    connection.query('SELECT oauth_uid FROM logged_users_tbl WHERE oauth_uid=?', [oauth_uid], function(err, result) {
+    mysqlPool.getConnection(function (err, connection) {
+        if (err)  {
+            console.log(err);
+            throw err;
+        }
+
+        connection.query('SELECT oauth_uid FROM logged_users_tbl WHERE oauth_uid=?', [oauth_uid], function(err, result) {
+
+            connection.release();
             if (err) {
                 console.log(err);
                 throw err;
             }
-
-            connection.end();
 
             var user_id = null;
             if (result.length  > 0) {
@@ -561,25 +673,32 @@ function getLoggedUserIdByOAuthUid(oauth_uid, callback) {
 
             callback(false, user_id);
         });
+    });
 }
 
 function getLoggedUserIdByToken(token, callback) {
 
-    var connection = connectToDB();
-    connection.query('SELECT oauth_uid FROM logged_users_tbl WHERE token=?', [token], function(err, result) {
-        if (err) {
+    mysqlPool.getConnection(function (err, connection) {
+        if (err)  {
             console.log(err);
             throw err;
         }
 
-        connection.end();
+        connection.query('SELECT oauth_uid FROM logged_users_tbl WHERE token=?', [token], function(err, result) {
 
-        var oauth_uid = null;
-        if (result.length  > 0) {
-            oauth_uid = result[0].oauth_uid;
-        }
+            connection.release();
+            if (err) {
+                console.log(err);
+                throw err;
+            }
 
-        callback(false, oauth_uid);
+            var oauth_uid = null;
+            if (result.length  > 0) {
+                oauth_uid = result[0].oauth_uid;
+            }
+
+            callback(false, oauth_uid);
+        });
     });
 }
 
@@ -591,55 +710,63 @@ function getLoggedUserIdByToken(token, callback) {
  */
 function insertANewGuestUser(mobile_type, mobile_value, callback) {
 
-    var connection = connectToDB();
     var datetime = new Date().toMysqlFormat();
     var provider = "Guest";
 
-    var sqlIsGuestExists = "SELECT mobile_identifier_value FROM users_tbl WHERE mobile_identifier_value=?";
-    connection.query(sqlIsGuestExists, [mobile_value], function (err, result) {
-        if (err) {
+    mysqlPool.getConnection(function (err, connection) {
+        if (err)  {
             console.log(err);
             throw err;
         }
 
-        if (result.length  > 0) {
-            console.log("user already exists \r\n");
+        var sqlIsGuestExists = "SELECT mobile_identifier_value FROM users_tbl WHERE mobile_identifier_value=?";
+        connection.query(sqlIsGuestExists, [mobile_value], function (err, result) {
+            if (err) {
+                console.log(err);
+                throw err;
+            }
 
-            // Maybe updates UA also? (maybe create a table for user-agents)
-            // This way we can know all the user devices.
+            if (result.length  > 0) {
+                console.log("user already exists \r\n");
 
-            // Updating last_entered date
-            var sqlUpdateFields = "UPDATE users_tbl SET date_last_entered = ? WHERE mobile_identifier_value = ?";
-            connection.query(sqlUpdateFields, [datetime,mobile_value], function(err, result) {
-                if (err) {
-                    console.log(err);
-                    throw err;
-                }
+                // Maybe updates UA also? (maybe create a table for user-agents)
+                // This way we can know all the user devices.
 
-                connection.end();
-                callback(false, result);
-            });
-        } else {
+                // Updating last_entered date
+                var sqlUpdateFields = "UPDATE users_tbl SET date_last_entered = ? WHERE mobile_identifier_value = ?";
+                connection.query(sqlUpdateFields, [datetime,mobile_value], function(err, result) {
 
-            console.log('user guest is not exists -> inserting...');
-            var values  = {
-                oauth_provider : provider,
-                mobile_identifier_type: mobile_type,
-                mobile_identifier_value : mobile_value,
-                date_registered : datetime,
-                date_last_entered : datetime
-            };
+                    connection.release();
+                    if (err) {
+                        console.log(err);
+                        throw err;
+                    }
 
-            connection.query('INSERT INTO users_tbl SET ?', values, function(err, result) {
-                if (err) {
-                    console.log(err);
-                    throw err;
-                }
+                    callback(false, result);
+                });
+            } else {
 
-                connection.end();
-                callback(false, result);
-            });
-        }
+                console.log('user guest is not exists -> inserting...');
+                var values  = {
+                    oauth_provider : provider,
+                    mobile_identifier_type: mobile_type,
+                    mobile_identifier_value : mobile_value,
+                    date_registered : datetime,
+                    date_last_entered : datetime
+                };
+
+                connection.query('INSERT INTO users_tbl SET ?', values, function(err, result) {
+
+                    connection.release();
+                    if (err) {
+                        console.log(err);
+                        throw err;
+                    }
+
+                    callback(false, result);
+                });
+            }
+        });
     });
 }
 
@@ -651,66 +778,72 @@ function insertANewGuestUser(mobile_type, mobile_value, callback) {
  */
 function insertANewFacebookUser(profile, user_agent, callback) {
 
-    var connection = connectToDB();
     var datetime = new Date().toMysqlFormat();
 
-    var sqlGetUserQuery = "SELECT fb_id, oauth_uid FROM users_tbl WHERE fb_id=?";
-    connection.query(sqlGetUserQuery,[profile.id], function (err, result) {
-        if (err) {
+    mysqlPool.getConnection(function (err, connection) {
+        if (err)  {
             console.log(err);
-            callback(err, result);
+            throw err;
         }
 
-        if (result.length  > 0) {
-            console.log("user already exists \r\n");
-            var facebook_id = result[0].fb_id;
-            var oauth_uid = result[0].oauth_uid;
+        var sqlGetUserQuery = "SELECT fb_id, oauth_uid FROM users_tbl WHERE fb_id=?";
+        connection.query(sqlGetUserQuery,[profile.id], function (err, result) {
 
-            // Maybe updates UA also? (maybe create a table for user-agents)
-            // This way we can know all the user devices.
-
-            // Updating token and last_entered date
-             var sqlUpdateFields = "UPDATE users_tbl SET date_last_entered = ?,fb_token= ? WHERE fb_id = ?";
-             connection.query(sqlUpdateFields, [datetime,profile._fbToken,facebook_id], function(err, result) {
-                 if (err) {
-                     console.log(err);
-                     throw err;
-                 }
-
-                 connection.end();
-                 callback(err, result, oauth_uid);
-             });
-        } else {
-
-            console.log('user is not exists -> inserting...');
-            var values  = {
-                oauth_provider : profile.provider,
-                fb_token: profile._fbToken,
-                fb_id : profile.id,
-                fb_username : profile.username,
-                fb_first_name : profile.name.givenName,
-                fb_last_name : profile.name.familyName,
-                fb_gender : profile.gender,
-                fb_email : typeof profile.emails === "undefined" ? null : profile.emails,
-                user_agent: user_agent,
-                date_registered : datetime,
-                date_last_entered : datetime
-            };
-
-            connection.query('INSERT INTO users_tbl SET ?', values, function(err, result) {
-                if (err) {
-                    console.log(err);
-                    throw err;
-                }
-
-                connection.end();
+            if (err) {
+                console.log(err);
                 callback(err, result);
-            });
-        }
+            }
+
+            if (result.length  > 0) {
+                console.log("user already exists \r\n");
+                var facebook_id = result[0].fb_id;
+                var oauth_uid = result[0].oauth_uid;
+
+                // Updating token and last_entered date
+                 var sqlUpdateFields = "UPDATE users_tbl SET date_last_entered = ?,fb_token= ? WHERE fb_id = ?";
+                 connection.query(sqlUpdateFields, [datetime,profile._fbToken,facebook_id], function(err, result) {
+
+                     connection.release();
+                     if (err) {
+                         console.log(err);
+                         throw err;
+                     }
+
+                     callback(err, result, oauth_uid);
+                 });
+            } else {
+
+                console.log('user is not exists -> inserting...');
+                var values  = {
+                    oauth_provider : profile.provider,
+                    fb_token: profile._fbToken,
+                    fb_id : profile.id,
+                    fb_username : profile.username,
+                    fb_first_name : profile.name.givenName,
+                    fb_last_name : profile.name.familyName,
+                    fb_gender : profile.gender,
+                    fb_email : typeof profile.emails === "undefined" ? null : profile.emails,
+                    user_agent: user_agent,
+                    date_registered : datetime,
+                    date_last_entered : datetime
+                };
+
+                connection.query('INSERT INTO users_tbl SET ?', values, function(err, result) {
+
+                    connection.release();
+                    if (err) {
+                        console.log(err);
+                        throw err;
+                    }
+
+                    callback(err, result);
+                });
+            }
+        });
     });
 }
 
-exports.connectToDB = connectToDB;
+exports.CreateMySqlConnectionPool = CreateMySqlConnectionPool;
 
 // Users table functions
 exports.getAllUsers = getAllUsers;
