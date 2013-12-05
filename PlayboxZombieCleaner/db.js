@@ -22,23 +22,32 @@ function connectToDB() {
 }
 
 /**
- *
+ * Select users that weren't active for 30 min and more...
  * @param callback
  */
 function getAllLoggedUsers(callback) {
 
     var connection = connectToDB();
 
-    connection.query("SELECT id FROM logged_users_tbl WHERE (last_action_date < (now() - interval 10 minute))",
+    connection.query("SELECT id FROM logged_users_tbl WHERE (last_action_date < (now() - interval 30 minute))",
         function(err, results) {
 
-        if (err) {
-            console.log(err);
-            throw err;
-        }
+            if (err) {
+                console.log(err);
+                throw err;
+            }
 
-        connection.end();
-        callback(false, results);
+            connection.end();
+
+            // Formatting the result to one big array.
+            var ids = [];
+
+            for(var key in results) {
+                ids.push(results[key].id);
+            }
+
+
+            callback(false, ids);
     });
 }
 
@@ -46,7 +55,7 @@ function getAllLoggedUsers(callback) {
  *
  * @param callback
  */
-function clearZombies (callback) {
+function clearZombiesFromLoggedUsers (callback) {
 
     var connection = connectToDB();
 
@@ -60,23 +69,23 @@ function clearZombies (callback) {
         if (results.length > 0) {
             // meaning there are zombies to delete
 
-            connection.query("DELETE FROM `logged_users_tbl` WHERE id IN (?)", [results],
+            connection.query("DELETE FROM logged_users_tbl WHERE id IN (?)", [results],
                 function(err, result) {
                     if (err) {
                         console.log(err);
                         throw err;
                     }
 
-                    console.log("[" + result.affectedRows + "] Zombies were deleted successfully");
-                    callback(false);
+                    var numZombiesCleared = result.affectedRows;
+                    callback(false, numZombiesCleared);
                 });
         } else {
             // No zombies for now...
             console.log("No zombies were found...");
-            callback(false);
+            callback(false, 0);
         }
     });
 }
 
 exports.connectToDB = connectToDB;
-exports.clearZombies = clearZombies;
+exports.clearZombiesFromLoggedUsers = clearZombiesFromLoggedUsers;

@@ -122,16 +122,16 @@ function leaveATable(res, params) {
 
 function getUserProfile(params, res) {
 
-    db.getLoggedUserIdByToken(params.token, function (err, result) {
+    db.getLoggedUserIdByToken(params.token, function (err, oauth_uid) {
         if (err) {
             console.log(err);
             throw err;
         }
 
-        if (result == null) {
+        if (oauth_uid == null) {
             res.json({'error' : 'token did not match to any user...'});
         } else {
-            db.getUserProfile(result, function (err, result) {
+            db.getUserProfile(oauth_uid, params.token, function (err, result) {
                 if (err) {
                     console.log(err);
                     throw err;

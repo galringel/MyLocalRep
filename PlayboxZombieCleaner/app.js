@@ -1,10 +1,9 @@
-
 /**
  * Module dependencies.
  */
-
 var express = require('express');
-var routes = require('./routes');
+//var routes = require('./routes');
+var db = require("./db");
 var user = require('./routes/user');
 var http = require('http');
 var path = require('path');
@@ -29,16 +28,31 @@ if ('development' == app.get('env')) {
 
 app.get('/', function(req, res){
 
-    // Loop forever and clear zombies
-    setTimeout(test, 1000);
+    // Do Nothing.
+    res.end("Clearing Zombies ;)");
 });
 
-function test() {
-    console.log("omg");
+// Clearing Zombies every 1 min for now.
+var timeoutInMilli = 60000;
+function ClearZombies() {
+
+    setInterval(function () {
+        console.log("Timeout elapsed. " + timeoutInMilli + " milli passed. going to clear some zombies! :)");
+
+        db.clearZombiesFromLoggedUsers(function(err, numZombiesCleared) {
+            if (err) {
+                console.log(err);
+            }
+
+            console.log("[" + numZombiesCleared + "] Zombies were deleted successfully");
+        });
+    }, timeoutInMilli);
 }
 
 app.get('/users', user.list);
 
 http.createServer(app).listen(app.get('port'), function(){
   console.log('Express server listening on port ' + app.get('port'));
+
+    ClearZombies();
 });

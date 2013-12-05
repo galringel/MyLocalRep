@@ -26,7 +26,7 @@
       <file leaf-file-name="app.js" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="73" column="0" selection-start="2580" selection-end="2661" vertical-scroll-proportion="0.0" vertical-offset="1071" max-vertical-offset="5168">
+            <state line="144" column="22" selection-start="4270" selection-end="4283" vertical-scroll-proportion="0.0" vertical-offset="2394" max-vertical-offset="5168">
               <folding />
             </state>
           </provider>
@@ -41,10 +41,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="db.js" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="db.js" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/db.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="560" column="0" selection-start="13544" selection-end="14018" vertical-scroll-proportion="17.728119" vertical-offset="0" max-vertical-offset="12733">
+            <state line="183" column="0" selection-start="4367" selection-end="4367" vertical-scroll-proportion="0.0" vertical-offset="2884" max-vertical-offset="12801">
               <folding>
                 <element signature="n#!!doc" expanded="true" />
               </folding>
@@ -55,10 +55,10 @@
       <file leaf-file-name="index.ejs" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/views/index.ejs">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="34" column="30" selection-start="1181" selection-end="1198" vertical-scroll-proportion="0.0" vertical-offset="578" max-vertical-offset="833">
+            <state line="34" column="59" selection-start="1227" selection-end="1227" vertical-scroll-proportion="-6.3076925" vertical-offset="414" max-vertical-offset="714">
               <folding>
-                <marker date="1385467663912" expanded="true" signature="761:840" placeholder="{...}" />
-                <marker date="1385467663912" expanded="true" signature="846:1513" placeholder="{...}" />
+                <marker date="1386080136842" expanded="true" signature="761:840" placeholder="{...}" />
+                <marker date="1386080136842" expanded="true" signature="846:1232" placeholder="{...}" />
               </folding>
             </state>
           </provider>
@@ -76,16 +76,16 @@
       <file leaf-file-name="gameLogic.js" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/gameLogic.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="89" column="8" selection-start="2361" selection-end="2361" vertical-scroll-proportion="0.0" vertical-offset="1326" max-vertical-offset="2550">
+            <state line="24" column="9" selection-start="518" selection-end="601" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2550">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="restAPI.js" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="restAPI.js" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/restAPI.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="19" column="13" selection-start="476" selection-end="476" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="3383">
+            <state line="193" column="31" selection-start="5693" selection-end="5693" vertical-scroll-proportion="0.68711656" vertical-offset="3057" max-vertical-offset="3383">
               <folding />
             </state>
           </provider>
@@ -108,20 +108,19 @@
         <option value="$PROJECT_DIR$/node_modules/express/node_modules/connect/lib/middleware/limit.js" />
         <option value="$PROJECT_DIR$/node_modules/express/node_modules/connect/lib/middleware/multipart.js" />
         <option value="$PROJECT_DIR$/serverLogic.js" />
-        <option value="$PROJECT_DIR$/views/index.ejs" />
         <option value="$PROJECT_DIR$/generateRequest.js" />
         <option value="$PROJECT_DIR$/getJSON.js" />
         <option value="$PROJECT_DIR$/getHTTP.js" />
         <option value="$PROJECT_DIR$/gameLogic.js" />
         <option value="$PROJECT_DIR$/app.js" />
-        <option value="$PROJECT_DIR$/db.js" />
         <option value="$PROJECT_DIR$/restAPI.js" />
+        <option value="$PROJECT_DIR$/db.js" />
+        <option value="$PROJECT_DIR$/views/index.ejs" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
     <option name="x" value="-8" />
-    <option name="y" value="-8" />
     <option name="width" value="1382" />
     <option name="height" value="722" />
   </component>
@@ -167,6 +166,20 @@
             </PATH_ELEMENT>
             <PATH_ELEMENT>
               <option name="myItemId" value="Playbox" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="login" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Playbox" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="views" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -260,7 +273,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1382" height="722" extended-state="0" />
+    <frame x="-8" y="0" width="1382" height="722" extended-state="1" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -268,7 +281,7 @@
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.24963397" sideWeight="0.5986394" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.40136054" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.40136054" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.40136054" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32993197" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
@@ -311,10 +324,22 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/restAPI.js</url>
+          <line>62</line>
+          <option name="timeStamp" value="85" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/restAPI.js</url>
+          <line>79</line>
+          <option name="timeStamp" value="86" />
+        </line-breakpoint>
+      </breakpoints>
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="80" />
+      <option name="time" value="87" />
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
@@ -348,21 +373,6 @@
         <state line="171" column="0" selection-start="3759" selection-end="3759" vertical-scroll-proportion="1.2699387" vertical-offset="2493" max-vertical-offset="5389" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/node_modules/mysql/lib/protocol/sequences/Sequence.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="74" column="0" selection-start="2005" selection-end="2005" vertical-scroll-proportion="0.0" vertical-offset="1150" max-vertical-offset="1666" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/views/index.ejs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="34" column="30" selection-start="1181" selection-end="1198" vertical-scroll-proportion="0.0" vertical-offset="578" max-vertical-offset="833">
-          <folding>
-            <marker date="1385467663912" expanded="true" signature="761:840" placeholder="{...}" />
-            <marker date="1385467663912" expanded="true" signature="846:1513" placeholder="{...}" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/views/login.ejs">
       <provider selected="true" editor-type-id="text-editor">
         <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="326">
@@ -387,33 +397,50 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/gameLogic.js">
+    <entry file="file://$PROJECT_DIR$/node_modules/mysql/lib/protocol/sequences/Sequence.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="89" column="8" selection-start="2361" selection-end="2361" vertical-scroll-proportion="0.0" vertical-offset="1326" max-vertical-offset="2550">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/restAPI.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="19" column="13" selection-start="476" selection-end="476" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="3383">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/app.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="73" column="0" selection-start="2580" selection-end="2661" vertical-scroll-proportion="0.0" vertical-offset="1071" max-vertical-offset="5168">
+        <state line="77" column="0" selection-start="2076" selection-end="2076" vertical-scroll-proportion="0.6441718" vertical-offset="1099" max-vertical-offset="1666">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/db.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="560" column="0" selection-start="13544" selection-end="14018" vertical-scroll-proportion="17.728119" vertical-offset="0" max-vertical-offset="12733">
+        <state line="183" column="0" selection-start="4367" selection-end="4367" vertical-scroll-proportion="0.0" vertical-offset="2884" max-vertical-offset="12801">
           <folding>
             <element signature="n#!!doc" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/gameLogic.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="24" column="9" selection-start="518" selection-end="601" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2550">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/views/index.ejs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="34" column="59" selection-start="1227" selection-end="1227" vertical-scroll-proportion="-6.3076925" vertical-offset="414" max-vertical-offset="714">
+          <folding>
+            <marker date="1386080136842" expanded="true" signature="761:840" placeholder="{...}" />
+            <marker date="1386080136842" expanded="true" signature="846:1232" placeholder="{...}" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="144" column="22" selection-start="4270" selection-end="4283" vertical-scroll-proportion="0.0" vertical-offset="2394" max-vertical-offset="5168">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/restAPI.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="193" column="31" selection-start="5693" selection-end="5693" vertical-scroll-proportion="0.68711656" vertical-offset="3057" max-vertical-offset="3383">
+          <folding />
         </state>
       </provider>
     </entry>

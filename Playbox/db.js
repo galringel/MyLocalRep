@@ -88,11 +88,16 @@ function getUserProfile(user_id, token, callback) {
                 throw err;
             }
 
+            //connection.end();
+
             console.log("getUserProfile was executed, user action timestamp logged");
         });
 
-        connection.end();
-        callback(false, result[0]);
+        if (result.length > 0) {
+            callback(false, result[0]);
+        } else {
+            callback(false, null);
+        }
     });
 }
 
@@ -173,7 +178,7 @@ function isUserInATable(user_id, callback) {
 
         connection.end();
         var res = false;
-        if (result != null) {
+        if (result.length > 0) {
             res = true;
         }
 
@@ -216,7 +221,6 @@ function getOpenTables(token, callback) {
                     console.log("getUserProfile was executed, user action timestamp logged");
                 });
             }
-
         });
 
         callback(false, result);
