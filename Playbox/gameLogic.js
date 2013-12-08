@@ -63,7 +63,7 @@ function addANewFacebookUser (facebook_profile, user_agent, callback) {
             db.addChipsToUserId(user_id, chipsForNewUser, function (err) {
                 if (err) {
                     console.log(err);
-                    callback(err);
+                    throw err;
                 }
 
                 console.log("chips were added successfully for the new user!");
@@ -75,11 +75,56 @@ function addANewFacebookUser (facebook_profile, user_agent, callback) {
     });
 }
 
+
+function getStatus(params, result, callback) {
+
+        var update_status = result[0].update_status;
+        var table_status = result[0].table_status;
+        var last_update_date = new Date(result[0].last_update_date).getTime();
+
+        var now_date = new Date().getTime();
+        var interval_check = 1000 * 30; // 30 seconds
+        var isPast = (now_date - last_update_date >= interval_check);
+
+        if (update_status == "Updated") {
+            if (isPast) {
+                // we need to go and query nimi's server and update table info
+                // TODO: for now we return the results from db
+                callback(false, result[0]);
+            } else {
+                // our data in db is fine, lets return it to the client
+
+                if (table_status == "BetStarted") {
+                    // No action from the client is needed, we just open a new game,
+                    // and return the client gameId also
+                    betStarted(params.table_id, function (err, gameId) {
+                        if (err) {
+                            console.log(err);
+                            throw err;
+                        }
+
+                        result[0].push(gameId);
+                    })
+                }
+
+                callback(false, result[0]);
+            }
+        } else if (update_status == "InProgess") {
+            // Meaning some client already cause a query to nimi
+            // we wait and then select data from DB.
+            // To avoid race condition.
+            // TODO: for now, we just call the function again.
+
+        }
+}
+
+
 /**
  *
  * @param table_id
+ * @param callback
  */
-function betStarted(table_id) {
+function betStarted(table_id, callback) {
 
     // Do the following:
     // - Generate a new game_id
@@ -87,13 +132,15 @@ function betStarted(table_id) {
 
     // TODO: think of a better uniqueId
     var gameId = generateGameId();
-    var params = {
-        token : req.query.token,
-        table_id : req.query.table_id
-    };
-    db.createANewGame(table_id, gameId, "Bet_Started");
-}
+    db.createANewGame(table_id, gameId, "Bet_Started", function (err, result) {
+        if (err) {
+            console.log(err);
+            throw err;
+        }
 
+        callback(false, gameId);
+    });
+}
 
 /**
  *
@@ -103,7 +150,7 @@ function betStarted(table_id) {
  * @param bet_type
  * @param bet_value
  */
-function betEnded(user_id, game_id, table_id, bet_type, bet_value) {
+function betEnded(params) {
 
     // Do the following:
     // - Create new bet record for each play
@@ -137,9 +184,8 @@ function gameEnded(user_id, game_id, bet_result, bet_profit) {
     db.updateChipsBalanceById(user_id, bet_profit);
 }
 
-exports.betStarted = betStarted;
-exports.betEnded = betEnded;
-exports.gameEnded = gameEnded;
-
 exports.addANewFacebookUser = addANewFacebookUser;
 exports.addAnewGuestUser = addAnewGuestUser;
+
+exports.getStatus = getStatus;
+exports.betEnded = betEnded;

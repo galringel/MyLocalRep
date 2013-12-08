@@ -1,4 +1,5 @@
 var db = require("./db");
+var gameLogic = require("./gameLogic");
 
 /**
  *
@@ -182,6 +183,49 @@ function getBaccaratTables(params, res) {
     });
 }
 
+function getBaccaratTableStatus(params, res, callback) {
+
+    db.getLoggedUserIdByToken(params.token, function (err, result) {
+        if (err) {
+            console.log(err);
+            throw err;
+        }
+
+        if (result == null) {
+            res.json({'error' : 'token did not match to any user...'});
+        } else {
+            db.getTableStatus(params.table_id, function (err, result) {
+                if (err) {
+                    console.log(err);
+                    throw err;
+                }
+
+                if (result.length == 0) {
+                    res.json({'Error' : 'The given table is not exists'});
+                } else {
+                    //callback(false, result);
+                    gameLogic.getStatus(params, result, function(err, result) {
+
+                        if (err) {
+                            console.log(err);
+                            throw err;
+                        }
+
+                        res.json(result);
+                    });
+                }
+            });
+        }
+    });
+}
+
+function betEnded(params, res) {
+
+    gameLogic.betEnded(params)
+
+
+}
+
 // Chips REST API actions
 exports.getChipsBalance = getChipsBalance;
 
@@ -192,3 +236,8 @@ exports.getUserProfile = getUserProfile;
 exports.joinATable = joinATable;
 exports.leaveATable = leaveATable;
 exports.getBaccaratTables = getBaccaratTables;
+exports.getBaccaratTableStatus = getBaccaratTableStatus;
+
+// Game REST API Actions
+exports.betStarted = betStarted;
+exports.betEnded = betEnded;

@@ -791,7 +791,7 @@ function insertANewFacebookUser(profile, user_agent, callback) {
 
             if (err) {
                 console.log(err);
-                callback(err, result);
+                throw err;
             }
 
             if (result.length  > 0) {
@@ -843,6 +843,33 @@ function insertANewFacebookUser(profile, user_agent, callback) {
     });
 }
 
+/**
+ *
+ * @param table_id
+ * @param callback
+ */
+function getTableStatus(table_id, callback) {
+
+    mysqlPool.getConnection(function (err, connection) {
+        if (err)  {
+            console.log(err);
+            throw err;
+        }
+
+        var sqlGetTableStatus = "SELECT * FROM baccarat_status WHERE table_id=?";
+        connection.query(sqlGetTableStatus,[table_id], function (err, result) {
+
+            connection.release();
+            if (err) {
+                console.log(err);
+                throw err;
+            }
+
+            callback(false,result)
+        });
+    });
+}
+
 exports.CreateMySqlConnectionPool = CreateMySqlConnectionPool;
 
 // Users table functions
@@ -879,3 +906,6 @@ exports.removeLoggedUser = removeLoggedUser;
 exports.getLoggedUserIdByToken = getLoggedUserIdByToken;
 exports.getLoggedUserIdByOAuthUid = getLoggedUserIdByOAuthUid;
 exports.updateLoggedUsersActionDate = updateLoggedUsersActionDate;
+
+// Table Status API
+exports.getTableStatus = getTableStatus;

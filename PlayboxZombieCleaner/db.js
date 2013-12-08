@@ -29,7 +29,7 @@ function getAllLoggedUsers(callback) {
 
     var connection = connectToDB();
 
-    connection.query("SELECT id FROM logged_users_tbl WHERE (last_action_date < (now() - interval 30 minute))",
+    connection.query("SELECT id FROM logged_users_tbl WHERE (last_action_date > (now() - interval 30 minute))",
         function(err, results) {
 
             if (err) {

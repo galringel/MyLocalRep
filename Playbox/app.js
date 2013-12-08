@@ -189,10 +189,10 @@ app.get('/tables/getTables', ensureAuthenticated, function (req, res) {
     rAPI.getBaccaratTables(params, res);
 });
 
-app.get('/games/betStarted', ensureAuthenticated, function (req, res) {
+app.get('/games/getBaccaratTableStatus', ensureAuthenticated, function (req, res) {
 
     if(!req.query.hasOwnProperty('token')  ||
-        !req.body.hasOwnProperty('table_id')) {
+        !req.query.hasOwnProperty('table_id')) {
 
         res.json({'error' : 'Bad GET parameters! expected: token, table_id'});
         return;
@@ -203,7 +203,38 @@ app.get('/games/betStarted', ensureAuthenticated, function (req, res) {
         table_id : req.query.table_id
     };
 
-    //gameLogic.betStarted()
+    rAPI.getBaccaratTableStatus(params, res, function(err) {
+        if (err) {
+            console.log(err);
+        }
+    });
+
+    //gameLogic.getStatus(params, res);
+});
+
+app.post('/games/betEnded', ensureAuthenticated, function (req, res) {
+
+    if(!req.body.hasOwnProperty('token') ||
+        !req.body.hasOwnProperty('table_id') ||
+        !req.body.hasOwnProperty('game_id') ||
+        !req.body.hasOwnProperty('banker') ||
+        !req.body.hasOwnProperty('tie') ||
+        !req.body.hasOwnProperty('player')) {
+
+        res.json({'error' : 'Bad POST parameters! expected: token and table_id'});
+        return;
+    }
+
+    var params = {
+        token : req.body.token,
+        table_id : req.body.table_id,
+        game_id : req.body.game_id,
+        banker : req.body.banker,
+        tie : req.body.tie,
+        player : req.body.player
+    };
+
+    rAPI.betEnded(params, res);
 });
 
 // GET /auth/facebook
