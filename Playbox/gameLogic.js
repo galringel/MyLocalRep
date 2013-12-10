@@ -1,7 +1,7 @@
 var db = require("./db");
 
 /**
- * Generate a random string at length 10
+ * Generate a random string at length 15
  * @returns {string}
  */
 function generateGameId()
@@ -9,7 +9,7 @@ function generateGameId()
     var text = "";
     var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
-    for( var i=0; i < 10; i++ ) {
+    for(var i = 0; i < 15; i++ ) {
         text += possible.charAt(Math.floor(Math.random() * possible.length));
     }
 
@@ -49,6 +49,7 @@ function addANewFacebookUser (facebook_profile, user_agent, callback) {
 
     db.insertANewFacebookUser(facebook_profile, user_agent, function(err, result, oauth_uid1) {
         if (err) {
+            console.log(err);
             throw err;
         }
 
@@ -82,39 +83,47 @@ function getStatus(params, result, callback) {
         var table_status = result[0].table_status;
         var last_update_date = new Date(result[0].last_update_date).getTime();
 
-        var now_date = new Date().getTime();
-        var interval_check = 1000 * 30; // 30 seconds
-        var isPast = (now_date - last_update_date >= interval_check);
-
         if (update_status == "Updated") {
+
+            var now_date = new Date().getTime();
+            var interval_check = 1000 * 20; // 20 seconds
+            var isPast = (now_date - last_update_date >= interval_check);
+
             if (isPast) {
-                // we need to go and query nimi's server and update table info
-                // TODO: for now we return the results from db
-                callback(false, result[0]);
-            } else {
-                // our data in db is fine, lets return it to the client
+                // We need to do two things:
+                // Update the table status as: "InProgress" (so other users won't query also)
+                // Query nimi's server and update table info
+                // TODO: using nimi's api
+            }
 
-                if (table_status == "BetStarted") {
-                    // No action from the client is needed, we just open a new game,
-                    // and return the client gameId also
-                    betStarted(params.table_id, function (err, gameId) {
-                        if (err) {
-                            console.log(err);
-                            throw err;
-                        }
+            // our data in db is updated, lets return it to the client
+            // but first, lets create a virtual game for the player.
 
-                        result[0].push(gameId);
-                    })
-                }
+            var isBetStarted = false;
+            if (table_status == "BetStarted") {
+                // No action from the client is needed, we just open a new virtual game,
+                // and return the client gameId of it and more details.
 
+                isBetStarted = true;
+                betStarted(params.table_id, function (err, gameId) {
+                    if (err) {
+                        console.log(err);
+                        throw err;
+                    }
+                    result[0]["gameId"] = gameId;
+                    callback(false, result[0]);
+                })
+            }
+
+            // If it was BetStarted we need to open a game and return GameId
+            // Before returning gameStatus() to the client.
+            if (!isBetStarted) {
                 callback(false, result[0]);
             }
-        } else if (update_status == "InProgess") {
+        } else if (update_status == "InProgress") {
             // Meaning some client already cause a query to nimi
-            // we wait and then select data from DB.
-            // To avoid race condition.
-            // TODO: for now, we just call the function again.
-
+            // we wait and then select data from DB again.
+            callback(false, "InProgress");
         }
 }
 
@@ -128,11 +137,10 @@ function betStarted(table_id, callback) {
 
     // Do the following:
     // - Generate a new game_id
-    // - Create a new game record in baccarat_games_tbl with status: "Bet_Started"
+    // - Create a new game record in baccarat_games_tbl with status: "BetStarted"
 
-    // TODO: think of a better uniqueId
     var gameId = generateGameId();
-    db.createANewGame(table_id, gameId, "Bet_Started", function (err, result) {
+    db.createANewGame(table_id, gameId, "BetStarted", function (err) {
         if (err) {
             console.log(err);
             throw err;
@@ -144,31 +152,27 @@ function betStarted(table_id, callback) {
 
 /**
  *
- * @param user_id
- * @param game_id
- * @param table_id
- * @param bet_type
- * @param bet_value
+ * @param params
+ * @param callback
  */
-function betEnded(params) {
+function betEnded(params, callback) {
 
     // Do the following:
     // - Create new bet record for each play
     // - Updates the user's chips balance in balance_tbl
     // - Updates baccarat_games_tbl status with: "Bet_Ended"
 
-    db.insertANewBet(user_id, game_id, table_id, bet_type, bet_value);
+    db.insertANewBet(params, function(err) {
+        if (err) {
+            console.log(err);
+            callback(true, err);
+        }
+    });
+
     db.updateChipsBalanceById(user_id, bet_value);
     db.updateGameStatus(game_id, "Bet_Ended");
 }
 
-/**
- *
- * @param user_id
- * @param game_id
- * @param bet_result
- * @param bet_profit
- */
 function gameEnded(user_id, game_id, bet_result, bet_profit) {
 
     // Do the following:

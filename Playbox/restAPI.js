@@ -183,6 +183,12 @@ function getBaccaratTables(params, res) {
     });
 }
 
+/**
+ *
+ * @param params
+ * @param res
+ * @param callback
+ */
 function getBaccaratTableStatus(params, res, callback) {
 
     db.getLoggedUserIdByToken(params.token, function (err, result) {
@@ -203,27 +209,62 @@ function getBaccaratTableStatus(params, res, callback) {
                 if (result.length == 0) {
                     res.json({'Error' : 'The given table is not exists'});
                 } else {
-                    //callback(false, result);
-                    gameLogic.getStatus(params, result, function(err, result) {
-
-                        if (err) {
-                            console.log(err);
-                            throw err;
-                        }
-
-                        res.json(result);
-                    });
+                   getStatus(params, result, res);
                 }
             });
         }
     });
 }
 
+/**
+ *
+ * @param params
+ * @param result
+ * @param res
+ */
+function getStatus(params, result, res) {
+
+    gameLogic.getStatus(params, result, function(err, result) {
+
+        if (err) {
+            console.log(err);
+            throw err;
+        }
+
+        if (result == "InProgress") {
+            // some connection is updating the db from VIVO's server
+            // so we call the function again, until finish.
+            getBaccaratTableStatus(params, res, arguments.callee);
+        } else {
+            res.json(result);
+        }
+    });
+
+}
+
 function betEnded(params, res) {
 
-    gameLogic.betEnded(params)
+    db.getLoggedUserIdByToken(params.token, function (err, result) {
+        if (err) {
+            console.log(err);
+            throw err;
+        }
+
+        if (result == null) {
+            res.json({'error' : 'token did not match to any user...'});
+        } else {
+
+            params["oauth_uid"] = result;
+            gameLogic.betEnded(params, function(err, result) {
+                if (err) {
+                    console.log(err);
+                    throw err;
+                }
 
 
+            });
+        }
+    });
 }
 
 // Chips REST API actions
@@ -239,5 +280,4 @@ exports.getBaccaratTables = getBaccaratTables;
 exports.getBaccaratTableStatus = getBaccaratTableStatus;
 
 // Game REST API Actions
-exports.betStarted = betStarted;
 exports.betEnded = betEnded;

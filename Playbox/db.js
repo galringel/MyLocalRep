@@ -50,31 +50,6 @@ function CreateMySqlConnectionPool() {
 /**
  * Gets all users from database
  */
-function getAllUsers() {
-
-    mysqlPool.getConnection(function (err, connection) {
-
-        if (err)  {
-            console.log(err);
-            throw err;
-        }
-
-        connection.query('SELECT * from users_tbl', function(err, result) {
-            connection.release();
-
-            if (err) {
-                console.log(err);
-                throw err;
-            }
-
-            return result;
-        });
-    });
-}
-
-/**
- * Gets all users from database
- */
 function getUserProfile(user_id, token, callback) {
 
     mysqlPool.getConnection(function (err, connection) {
@@ -414,28 +389,22 @@ function updateGameStatus(game_id, game_status) {
     });
 }
 
-/**
- *
- * @param user_id
- * @param game_id
- * @param table_id
- * @param bet_type
- * @param bet_value
- */
-function insertANewBet(user_id, game_id, table_id, bet_type, bet_value) {
+
+function insertANewBet(params, callback) {
 
     var values  = {
-        oauth_uid : user_id,
-        game_id: game_id,
-        table_id : table_id,
-        bet_type : bet_type,
-        bet_value : bet_value
+        oauth_uid : params.oauth_uid,
+        game_id: params.game_id,
+        table_id : params.table_id,
+        banker_bet : params.banker,
+        tie_bet : params.tie,
+        player_bet : params.player
     };
 
     mysqlPool.getConnection(function (err, connection) {
         if (err)  {
             console.log(err);
-            throw err;
+            callback(true, err);
         }
         connection.query('INSERT INTO baccarat_bets_tbl SET ?', values, function(err) {
 
@@ -445,13 +414,11 @@ function insertANewBet(user_id, game_id, table_id, bet_type, bet_value) {
                 throw err;
             }
 
-            updateLoggedUsersActionDate(user_id, function(err) {
+            updateLoggedUsersActionDate(params.oauth_uid, params.token, function(err) {
                 if (err) {
                     console.log(err);
-                    throw err;
+                    callback(true, err);
                 }
-
-                console.log("getUserProfile was executed, user action timestamp logged");
             });
         });
     });
@@ -873,7 +840,6 @@ function getTableStatus(table_id, callback) {
 exports.CreateMySqlConnectionPool = CreateMySqlConnectionPool;
 
 // Users table functions
-exports.getAllUsers = getAllUsers;
 exports.getOAuthUidByFacebookId = getOAuthUidByFacebookId;
 exports.getUserProfile = getUserProfile;
 
