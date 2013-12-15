@@ -29,23 +29,20 @@ function getAllLoggedUsers(callback) {
 
     var connection = connectToDB();
 
-    connection.query("SELECT id FROM logged_users_tbl WHERE (last_action_date > (now() - interval 30 minute))",
+    connection.query("SELECT id FROM logged_users_tbl WHERE (last_action_date < (DATE_SUB(NOW(), INTERVAL 30 MINUTE)))",
         function(err, results) {
 
+            connection.end();
             if (err) {
                 console.log(err);
                 throw err;
             }
 
-            connection.end();
-
             // Formatting the result to one big array.
             var ids = [];
-
             for(var key in results) {
                 ids.push(results[key].id);
             }
-
 
             callback(false, ids);
     });
@@ -58,7 +55,6 @@ function getAllLoggedUsers(callback) {
 function clearZombiesFromLoggedUsers (callback) {
 
     var connection = connectToDB();
-
     getAllLoggedUsers(function(err, results) {
 
         if (err) {
@@ -71,6 +67,8 @@ function clearZombiesFromLoggedUsers (callback) {
 
             connection.query("DELETE FROM logged_users_tbl WHERE id IN (?)", [results],
                 function(err, result) {
+
+                    connection.end();
                     if (err) {
                         console.log(err);
                         throw err;

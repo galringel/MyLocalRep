@@ -33,7 +33,7 @@ app.get('/', function(req, res){
 });
 
 // Clearing Zombies every 1 min for now.
-var timeoutInMilli = 60000;
+var timeoutInMilli = 10000;
 function ClearZombies() {
 
     setInterval(function () {

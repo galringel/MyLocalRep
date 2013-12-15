@@ -80,8 +80,6 @@ app.get('/session/getInfo', ensureAuthenticated, function(req, res){
     res.json({'info' : 'logged-in successfully!', 'token': req.sessionID });
 });
 
-
-
 app.get('/account', ensureAuthenticated, function(req, res){
   res.render('account', { user: req.user });
 });
@@ -96,50 +94,48 @@ app.get('/guest', function(req, res){
         !req.query.hasOwnProperty('mobile_value')) {
 
         res.json({'error' : 'Bad GET parameters! expected: mobile_type, mobile_value'});
-        return;
+    } else {
+        var params = {
+            mobile_type : req.query.mobile_type,
+            mobile_value : req.query.mobile_value
+        };
+
+        gameLogic.addAnewGuestUser(params, function(err) {
+            if (err) {
+                console.log(err);
+                res.json({'ERROR' : 'Something went wrong', 'Exception' : err.message });
+            } else {
+                console.log("Guest user was added successfully");
+                res.render('index', { user : params.mobile_value });
+            }
+        });
     }
-
-    var params = {
-        mobile_type : req.query.mobile_type,
-        mobile_value : req.query.mobile_value
-    };
-
-    gameLogic.addAnewGuestUser(params, function(err) {
-        if (err) {
-            console.log(err);
-        }
-
-        console.log("Guest user was added successfully");
-        res.render('index', { user : params.mobile_value });
-    });
 });
 
 app.get('/chips/getChips',ensureAuthenticated, function (req, res) {
 
     if (!req.query.hasOwnProperty('token')) {
-        res.json({'error' : 'Bad GET parameters! expected: token'});
-        return;
+        res.json({'ERROR' : 'Bad GET parameters! expected: token'});
+    } else {
+        var params = {
+            token : req.query.token
+        };
+
+        rAPI.getChipsBalance(params, res);
     }
-
-    var params = {
-        token : req.query.token
-    };
-
-    rAPI.getChipsBalance(params, res);
 });
 
 app.get('/profile/getProfile', ensureAuthenticated, function (req, res) {
 
     if (!req.query.hasOwnProperty('token')) {
-        res.json({'error' : 'Bad GET parameters! expected: token'});
-        return;
+        res.json({'ERROR' : 'Bad GET parameters! expected: token'});
+    } else {
+        var params = {
+            token : req.query.token
+        };
+
+        rAPI.getUserProfile(params, res);
     }
-
-    var params = {
-        token : req.query.token
-    };
-
-    rAPI.getUserProfile(params, res);
 });
 
 app.post('/tables/join', ensureAuthenticated, function (req, res) {
@@ -147,46 +143,43 @@ app.post('/tables/join', ensureAuthenticated, function (req, res) {
     if(!req.body.hasOwnProperty('token') ||
         !req.body.hasOwnProperty('table_id')) {
 
-        res.json({'error' : 'Bad POST parameters! expected: token and table_id'});
-        return;
+        res.json({'ERROR' : 'Bad POST parameters! expected: token and table_id'});
+    } else {
+        var params = {
+            token : req.body.token,
+            table_id : req.body.table_id
+        };
+
+        rAPI.joinATable(params, res);
     }
-
-    var params = {
-        token : req.body.token,
-        table_id : req.body.table_id
-    };
-
-    rAPI.joinATable(res, params);
 });
 
 app.get('/tables/leave', ensureAuthenticated, function (req, res) {
 
     if(!req.query.hasOwnProperty('token')) {
 
-        res.json({'error' : 'Bad GET parameters! expected: token'});
-        return;
+        res.json({'ERROR' : 'Bad GET parameters! expected: token'});
+    } else {
+        var params = {
+            token : req.query.token
+        };
+
+        rAPI.leaveATable(params, res);
     }
-
-    var params = {
-        token : req.query.token
-    };
-
-    rAPI.leaveATable(res, params);
 });
 
 app.get('/tables/getTables', ensureAuthenticated, function (req, res) {
 
     if(!req.query.hasOwnProperty('token')) {
 
-        res.json({'error' : 'Bad GET parameters! expected: token'});
-        return;
+        res.json({'ERROR' : 'Bad GET parameters! expected: token'});
+    } else {
+        var params = {
+            token : req.query.token
+        };
+
+        rAPI.getBaccaratTables(params, res);
     }
-
-    var params = {
-        token : req.query.token
-    };
-
-    rAPI.getBaccaratTables(params, res);
 });
 
 app.get('/games/getBaccaratTableStatus', ensureAuthenticated, function (req, res) {
@@ -194,22 +187,15 @@ app.get('/games/getBaccaratTableStatus', ensureAuthenticated, function (req, res
     if(!req.query.hasOwnProperty('token')  ||
         !req.query.hasOwnProperty('table_id')) {
 
-        res.json({'error' : 'Bad GET parameters! expected: token, table_id'});
-        return;
+        res.json({'ERROR' : 'Bad GET parameters! expected: token, table_id'});
+    } else {
+        var params = {
+            token : req.query.token,
+            table_id : req.query.table_id
+        };
+
+        rAPI.getBaccaratTableStatus(params, res);
     }
-
-    var params = {
-        token : req.query.token,
-        table_id : req.query.table_id
-    };
-
-    rAPI.getBaccaratTableStatus(params, res, function(err) {
-        if (err) {
-            console.log(err);
-        }
-    });
-
-    //gameLogic.getStatus(params, res);
 });
 
 app.post('/games/betEnded', ensureAuthenticated, function (req, res) {
@@ -219,25 +205,28 @@ app.post('/games/betEnded', ensureAuthenticated, function (req, res) {
         !req.body.hasOwnProperty('game_id') ||
         !req.body.hasOwnProperty('banker') ||
         !req.body.hasOwnProperty('tie') ||
-        !req.body.hasOwnProperty('player')) {
+        !req.body.hasOwnProperty('player') ||
+        !req.body.hasOwnProperty('player_pair') ||
+        !req.body.hasOwnProperty('banker_pair')){
 
-        res.json({'error' : 'Bad POST parameters! expected: token and table_id'});
-        return;
+        res.json({'ERROR' : 'Bad POST parameters! expected: token and table_id'});
+    } else {
+        var params = {
+            token : req.body.token,
+            table_id : req.body.table_id,
+            game_id : req.body.game_id,
+            banker : req.body.banker,
+            tie : req.body.tie,
+            player : req.body.player,
+            player_pair: req.body.player_pair,
+            banker_pair: req.body.banker_pair
+        };
+
+        rAPI.betEnded(params, res);
     }
-
-    var params = {
-        token : req.body.token,
-        table_id : req.body.table_id,
-        game_id : req.body.game_id,
-        banker : req.body.banker,
-        tie : req.body.tie,
-        player : req.body.player
-    };
-
-    rAPI.betEnded(params, res);
 });
 
-// GET /auth/facebook
+//   GET /auth/facebook
 //   Use passport.authenticate() as route middleware to authenticate the
 //   request.  The first step in Facebook authentication will involve
 //   redirecting the user to facebook.com.  After authorization, Facebook will
@@ -262,44 +251,56 @@ app.get('/auth/facebook/callback',
       gameLogic.addANewFacebookUser(req.user, user_agent, function(err, result, oauth_uid) {
           if (err) {
               console.log(err);
-              return;
+              res.json({'ERROR' : 'could not add new Facebook User', 'Exception' : err.message });
+          } else {
+              // user oauth_uid;
+              var associated_oauth_uid = oauth_uid;
+              // get the session token id;
+              var token = req.sessionID;
+
+              db.getLoggedUserIdByToken(token, function(err, result) {
+
+                  if (err) {
+                      console.log(err);
+                      res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
+                  } else {
+                      if (result == null) {
+                          // user is not added as logged in
+                          db.addLoggedUser(associated_oauth_uid, token, user_agent, function(err) {
+                              if (err) {
+                                  console.log(err);
+                                  res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
+                              } else {
+                                  res.redirect("/session/getInfo");
+                              }
+                          });
+                      } else {
+                          // user is already logged in,
+                          // we just need to update it datetime
+                          db.updateLoggedUsersActionDate(associated_oauth_uid, token, function(err) {
+                              if (err) {
+                                  console.log(err);
+                                  res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
+                              } else {
+                                  res.redirect("/session/getInfo");
+                              }
+                          });
+                      }
+                  }
+              });
           }
-
-          // user oauth_uid;
-          var associated_oauth_uid = oauth_uid;
-          // get the session token id;
-          var token = req.sessionID;
-
-          db.getLoggedUserIdByToken(token, function(err, result) {
-
-              if (result == null) {
-                  // user is not added as logged in
-                  db.addLoggedUser(associated_oauth_uid, token, user_agent, function(err) {
-                      if (err) {
-                          console.log(err);
-                      }
-                  });
-              } else {
-                  // user is already logged in,
-                  // we just need to update it datetime
-                  db.updateLoggedUsersActionDate(associated_oauth_uid, token, function(err) {
-                      if (err) {
-                          console.log(err);
-                      }
-                  });
-              }
-
-              console.log("User was logged in successfully and added to db");
-          });
       });
-
-    //res.redirect('/');
-      res.redirect("/session/getInfo");
   });
 
 app.get('/logout', function(req, res){
   req.logout();
   res.redirect('/');
+});
+
+process.on('uncaughtException', function (err) {
+    console.error('An uncaughtException was found, the program will end.');
+    //hopefully do some logging.
+    process.exit(1);
 });
 
 process.on('SIGTERM', function () {
@@ -312,15 +313,12 @@ app.on('close', function () {
     redis.quit();
 });
 
-
 // ============================
 app.listen(3000, function() {
 
     console.log("Server is up and running on port: 3000\r\n");
     db.CreateMySqlConnectionPool();
 });
-
-
 
 // Simple route middleware to ensure user is authenticated.
 //   Use this route middleware on any resource that needs to be protected.  If

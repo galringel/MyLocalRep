@@ -11,24 +11,24 @@ function getChipsBalance(params, res) {
     db.getLoggedUserIdByToken(params.token, function (err, result) {
         if (err) {
             console.log(err);
-            throw err;
-        }
-
-        if (result == null) {
-            res.json({'error' : 'token did not match to any user...'});
+            res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
         } else {
-            db.getChipsBalanceById(result, params.token, function (err, result) {
-                if (err) {
-                    console.log(err);
-                    throw err;
-                }
-
-                if (result == null) {
-                    res.json({'error' : 'user requested has no chips attached'});
-                } else {
-                    res.json({'chips' : result});
-                }
-            });
+            if (result == null) {
+                res.json({'ERROR' : 'token did not match to any user...'});
+            } else {
+                db.getChipsBalanceById(result, params.token, function (err, result) {
+                    if (err) {
+                        console.log(err);
+                        res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
+                    } else {
+                        if (result == null) {
+                            res.json({'ERROR' : 'the given users has no chips at all! wrong user?'});
+                        } else {
+                            res.json({'chips' : result});
+                        }
+                    }
+                });
+            }
         }
     });
 }
@@ -38,7 +38,7 @@ function getChipsBalance(params, res) {
  * @param res
  * @param params
  */
-function joinATable(res, params) {
+function joinATable(params, res) {
 
     // First we check if user is already playing at a table.
     // If so: we delete him from there and add him to the new table
@@ -48,42 +48,54 @@ function joinATable(res, params) {
     db.getLoggedUserIdByToken(params.token, function (err, result) {
         if (err) {
             console.log(err);
-            throw err;
-        }
-
-        var user_id = result;
-        if (result == null) {
-            res.json({'error' : 'token did not match to any user...'});
+            res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
         } else {
-            db.isUserInATable(user_id, function(err, result) {
-                if (err) {
-                    console.log(err);
-                    throw err;
-                }
+            var user_id = result;
+            if (result == null) {
+                res.json({'ERROR' : 'token did not match to any user...'});
+            } else {
+                db.isUserInATable(user_id, function(err, result) {
+                    if (err) {
+                        console.log(err);
+                        res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
+                    } else {
+                        if (result) {
+                            console.log("user was found in a some table... removing...");
+                            // User is found, we need to remove
+                            db.removeUserFromTable(user_id, params.token, function (err) {
+                                if (err) {
+                                    console.log(err);
+                                    res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
+                                } else {
 
-                if (result) {
-                    console.log("user was found in a table... removing...");
-                    // User is found, we need to remove
-                    db.removeUserFromTable(user_id, params.token, function (err) {
-                        if (err) {
-                            console.log(err);
-                            throw err;
+                                    console.log("user removed from old table... adding to a new table");
+                                    db.addUserToTable(user_id, params.token, params.table_id, function (err) {
+                                        if (err) {
+                                            console.log(err);
+                                            res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
+                                        } else {
+                                            console.log("user_id = [" + user_id + "] was added successfully to table_id=[" +
+                                                params.table_id + "]");
+                                            res.json({'OK' : 'ser added'});
+                                        }
+                                    });
+                                }
+                            });
                         } else {
-
-                            console.log("user removed from old table... inserting to a new table");
-                            db.addUserToTable(user_id, params.token, params.table_id);
-                            console.log("user_id = [" + user_id + "] was added successfully to table_id=[" +
-                                params.table_id + "]");
-                            res.json({'Result' : 'OK, user added'});
+                            db.addUserToTable(user_id, params.token, params.table_id, function (err) {
+                                if (err) {
+                                    console.log(err);
+                                    res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
+                                } else {
+                                    console.log("user_id = [" + user_id + "] was added successfully to table_id=[" +
+                                        params.table_id + "]");
+                                    res.json({'OK' : 'user added'});
+                                }
+                            });
                         }
-                    });
-                } else {
-                    db.addUserToTable(user_id, params.token, params.table_id);
-                    console.log("user_id = [" + user_id + "] was added successfully to table_id=[" +
-                        params.table_id + "]");
-                    res.json({'Result' : 'OK, user added'});
-                }
-            });
+                    }
+                });
+            }
         }
     });
 }
@@ -93,30 +105,30 @@ function joinATable(res, params) {
  * @param res
  * @param params
  */
-function leaveATable(res, params) {
+function leaveATable(params, res) {
 
     db.getLoggedUserIdByToken(params.token, function (err, result) {
         if (err) {
             console.log(err);
-            throw err;
-        }
-
-        if (result == null) {
-            res.json({'error' : 'token did not match to any user...'});
+            res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
         } else {
-            // User is found, we need to remove
-            db.removeUserFromTable(result, params.token, function (err, result) {
-                if (err) {
-                    console.log(err);
-                    throw err;
-                } else {
-                    if (result.affectedRows == 0) {
-                        res.json({'Result' : 'FALSE, user is not in any table'});
+            if (result == null) {
+                res.json({'ERROR' : 'token did not match to any user...'});
+            } else {
+                // User is found, we need to remove
+                db.removeUserFromTable(result, params.token, function (err, result) {
+                    if (err) {
+                        console.log(err);
+                        res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
                     } else {
-                        res.json({'Result' : 'OK, user removed'});
+                        if (result.affectedRows == 0) {
+                            res.json({'ERROR' : 'the given user is not playing in any table'});
+                        } else {
+                            res.json({'OK' : 'user removed'});
+                        }
                     }
-                }
-            });
+                });
+            }
         }
     });
 }
@@ -126,27 +138,27 @@ function getUserProfile(params, res) {
     db.getLoggedUserIdByToken(params.token, function (err, oauth_uid) {
         if (err) {
             console.log(err);
-            throw err;
-        }
-
-        if (oauth_uid == null) {
-            res.json({'error' : 'token did not match to any user...'});
+            res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
         } else {
-            db.getUserProfile(oauth_uid, params.token, function (err, result) {
-                if (err) {
-                    console.log(err);
-                    throw err;
-                }
-
-                if (result == null) {
-                    res.json({'error' : 'user was not found...'});
-                } else {
-                    res.json({
-                        'Firstname' : result.fb_first_name,
-                        'Lastname' : result.fb_last_name
-                    });
-                }
-            });
+            if (oauth_uid == null) {
+                res.json({'ERROR' : 'token did not match to any user...'});
+            } else {
+                db.getUserProfile(oauth_uid, params.token, function (err, result) {
+                    if (err) {
+                        console.log(err);
+                        res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
+                    } else {
+                        if (result == null) {
+                            res.json({'ERROR' : 'user was not found...'});
+                        } else {
+                            res.json({
+                                'Firstname' : result.fb_first_name,
+                                'Lastname' : result.fb_last_name
+                            });
+                        }
+                    }
+                });
+            }
         }
     });
 }
@@ -161,24 +173,24 @@ function getBaccaratTables(params, res) {
     db.getLoggedUserIdByToken(params.token, function (err, result) {
         if (err) {
             console.log(err);
-            throw err;
-        }
-
-        if (result == null) {
-            res.json({'error' : 'token did not match to any user...'});
+            res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
         } else {
-            db.getOpenTables(params.token, function (err, result) {
-                if (err) {
-                    console.log(err);
-                    throw err;
-                }
-
-                if (result == null) {
-                    res.json({'error' : 'There are no open tables'});
-                } else {
-                    res.json(result);
-                }
-            });
+            if (result == null) {
+                res.json({'ERROR' : 'token did not match to any user...'});
+            } else {
+                db.getOpenTables(params.token, function (err, result) {
+                    if (err) {
+                        console.log(err);
+                        res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
+                    } else {
+                        if (result == null) {
+                            res.json({'ERROR' : 'There are no open tables'});
+                        } else {
+                            res.json(result);
+                        }
+                    }
+                });
+            }
         }
     });
 }
@@ -187,31 +199,30 @@ function getBaccaratTables(params, res) {
  *
  * @param params
  * @param res
- * @param callback
  */
-function getBaccaratTableStatus(params, res, callback) {
+function getBaccaratTableStatus(params, res) {
 
     db.getLoggedUserIdByToken(params.token, function (err, result) {
         if (err) {
             console.log(err);
-            throw err;
-        }
-
-        if (result == null) {
-            res.json({'error' : 'token did not match to any user...'});
+            res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
         } else {
-            db.getTableStatus(params.table_id, function (err, result) {
-                if (err) {
-                    console.log(err);
-                    throw err;
-                }
-
-                if (result.length == 0) {
-                    res.json({'Error' : 'The given table is not exists'});
-                } else {
-                   getStatus(params, result, res);
-                }
-            });
+            if (result == null) {
+                res.json({'ERROR' : 'token did not match to any user...'});
+            } else {
+                db.getTableStatus(params.table_id, function (err, result) {
+                    if (err) {
+                        console.log(err);
+                        res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
+                    } else {
+                        if (result.length == 0) {
+                            res.json({'ERROR' : 'The given table is not exists'});
+                        } else {
+                            getStatus(params, result, res);
+                        }
+                    }
+                });
+            }
         }
     });
 }
@@ -228,15 +239,16 @@ function getStatus(params, result, res) {
 
         if (err) {
             console.log(err);
-            throw err;
-        }
-
-        if (result == "InProgress") {
-            // some connection is updating the db from VIVO's server
-            // so we call the function again, until finish.
-            getBaccaratTableStatus(params, res, arguments.callee);
+            res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
         } else {
-            res.json(result);
+            if (result == "InProgress") {
+                // some player connection is querying VIVO's server,
+                // so we call the function again, until he finish and updates our db.
+                // TODO: maybe use process.nextTick() instead of recursive call
+                getBaccaratTableStatus(params, res);
+            } else {
+                res.json(result);
+            }
         }
     });
 
@@ -247,22 +259,22 @@ function betEnded(params, res) {
     db.getLoggedUserIdByToken(params.token, function (err, result) {
         if (err) {
             console.log(err);
-            throw err;
-        }
-
-        if (result == null) {
-            res.json({'error' : 'token did not match to any user...'});
+            res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
         } else {
+            if (result == null) {
+                res.json({'ERROR' : 'token did not match to any user...'});
+            } else {
 
-            params["oauth_uid"] = result;
-            gameLogic.betEnded(params, function(err, result) {
-                if (err) {
-                    console.log(err);
-                    throw err;
-                }
-
-
-            });
+                params["oauth_uid"] = result;
+                gameLogic.betEnded(params, function(err) {
+                    if (err) {
+                        console.log(err);
+                        res.json({'ERROR' : 'Something is wrong in database.', 'Exception' : err.message });
+                    } else {
+                        res.json({'OK' : 'betEnded was executed successfully'});
+                    }
+                });
+            }
         }
     });
 }
