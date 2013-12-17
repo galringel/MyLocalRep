@@ -26,7 +26,7 @@
       <file leaf-file-name="app.js" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="224" column="0" selection-start="6852" selection-end="6852" vertical-scroll-proportion="-4.0" vertical-offset="3708" max-vertical-offset="5712">
+            <state line="194" column="10" selection-start="5787" selection-end="5891" vertical-scroll-proportion="0.0" vertical-offset="2969" max-vertical-offset="5712">
               <folding />
             </state>
           </provider>
@@ -44,7 +44,7 @@
       <file leaf-file-name="db.js" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/db.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="482" column="9" selection-start="13118" selection-end="13118" vertical-scroll-proportion="-1.96" vertical-offset="8145" max-vertical-offset="15861">
+            <state line="547" column="9" selection-start="14939" selection-end="14939" vertical-scroll-proportion="-7.16" vertical-offset="9120" max-vertical-offset="16660">
               <folding />
             </state>
           </provider>
@@ -70,7 +70,7 @@
       <file leaf-file-name="gameLogic.js" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/gameLogic.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="227" column="4" selection-start="7818" selection-end="7829" vertical-scroll-proportion="0.6779141" vertical-offset="3638" max-vertical-offset="4641">
+            <state line="268" column="51" selection-start="9670" selection-end="9670" vertical-scroll-proportion="-1.4822065" vertical-offset="5389" max-vertical-offset="6664">
               <folding />
             </state>
           </provider>
@@ -79,7 +79,7 @@
       <file leaf-file-name="restAPI.js" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/restAPI.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="268" column="30" selection-start="10089" selection-end="10089" vertical-scroll-proportion="0.0" vertical-offset="3870" max-vertical-offset="5100">
+            <state line="237" column="20" selection-start="8986" selection-end="8986" vertical-scroll-proportion="0.0" vertical-offset="3808" max-vertical-offset="5100">
               <folding />
             </state>
           </provider>
@@ -261,8 +261,8 @@
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.59013605" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.17935579" sideWeight="0.5986394" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.40136054" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.17935579" sideWeight="0.40986395" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.40136054" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.40136054" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32993197" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
@@ -387,13 +387,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/app.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="224" column="0" selection-start="6852" selection-end="6852" vertical-scroll-proportion="-4.0" vertical-offset="3708" max-vertical-offset="5712">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/views/index.ejs">
       <provider selected="true" editor-type-id="text-editor">
         <state line="34" column="59" selection-start="1227" selection-end="1227" vertical-scroll-proportion="-6.3076925" vertical-offset="414" max-vertical-offset="714">
@@ -411,21 +404,28 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/restAPI.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="268" column="30" selection-start="10089" selection-end="10089" vertical-scroll-proportion="0.0" vertical-offset="4431" max-vertical-offset="5100">
+        <state line="237" column="20" selection-start="8986" selection-end="8986" vertical-scroll-proportion="0.0" vertical-offset="3808" max-vertical-offset="5100">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/db.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="482" column="9" selection-start="13118" selection-end="13118" vertical-scroll-proportion="-1.96" vertical-offset="8145" max-vertical-offset="15861">
+        <state line="547" column="9" selection-start="14939" selection-end="14939" vertical-scroll-proportion="-7.16" vertical-offset="9120" max-vertical-offset="16660">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="194" column="10" selection-start="5787" selection-end="5891" vertical-scroll-proportion="0.0" vertical-offset="2969" max-vertical-offset="5712">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/gameLogic.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="227" column="4" selection-start="7818" selection-end="7829" vertical-scroll-proportion="0.6779141" vertical-offset="3638" max-vertical-offset="4641">
+        <state line="268" column="51" selection-start="9670" selection-end="9670" vertical-scroll-proportion="-1.4822065" vertical-offset="5389" max-vertical-offset="6664">
           <folding />
         </state>
       </provider>

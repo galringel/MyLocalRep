@@ -334,7 +334,7 @@ function createANewGame(table_id, game_id, game_status, callback) {
  * @param game_id
  * @param callback
  */
-function getGameId(game_id, callback) {
+function getGameRecordById(game_id, callback) {
 
     mysqlPool.getConnection(function (err, connection) {
 
@@ -475,7 +475,7 @@ function insertANewBet(params, callback) {
 
 /**
  * Update the bet after the game is finished with the result:
- * "Player", "Tie", "Banker"
+ * "P" = Player, "T" = Tie, "B" = "Banker"
  * @param game_id
  * @param bet_result
  * @param callback
@@ -860,6 +860,51 @@ function insertANewFacebookUser(profile, user_agent, callback) {
     });
 }
 
+function getLastGameWinner(table_id, callback) {
+
+    mysqlPool.getConnection(function (err, connection) {
+        if (err)  {
+            console.log(err);
+            callback(err);
+        } else {
+            var sqlGetLastGameWinner = "SELECT last_winner FROM baccarat_status WHERE table_id=?";
+            connection.query(sqlGetLastGameWinner,[table_id], function (err, result) {
+
+                connection.release();
+                if (err) {
+                    console.log(err);
+                    callback(err);
+                } else {
+                    callback(false,result)
+                }
+            });
+        }
+    });
+}
+
+
+function getBetByGameIdAndTableId (game_id, table_id, callback) {
+
+    mysqlPool.getConnection(function (err, connection) {
+        if (err)  {
+            console.log(err);
+            callback(err);
+        } else {
+            var sqlGetTableStatus = "SELECT * FROM baccarat_bets_tbl WHERE table_id = ? and gameId = ?";
+            connection.query(sqlGetTableStatus,[table_id, game_id], function (err, result) {
+
+                connection.release();
+                if (err) {
+                    console.log(err);
+                    callback(err);
+                } else {
+                    callback(false,result)
+                }
+            });
+        }
+    });
+}
+
 /**
  *
  * @param table_id
@@ -889,7 +934,7 @@ function getTableStatus(table_id, callback) {
 
 exports.CreateMySqlConnectionPool = CreateMySqlConnectionPool;
 
-// Users table functions
+// Users actions
 exports.getOAuthUidByFacebookId = getOAuthUidByFacebookId;
 exports.getUserProfile = getUserProfile;
 
@@ -911,11 +956,13 @@ exports.getOpenTables = getOpenTables;
 //Game actions
 exports.createANewGame = createANewGame;
 exports.updateGameStatus = updateGameStatus;
-exports.getGameId = getGameId;
+exports.getGameRecordById = getGameRecordById;
+exports.getLastGameWinner = getLastGameWinner;
 
 // Bets actions
 exports.insertANewBet = insertANewBet;
 exports.updateABetWithResult = updateABetWithResult;
+exports.getBetByGameIdAndTableId = getBetByGameIdAndTableId;
 
 // Logged users actions
 exports.addLoggedUser = addLoggedUser;

@@ -75,7 +75,6 @@ function addANewFacebookUser (facebook_profile, user_agent, callback) {
     });
 }
 
-
 function getStatus(params, result, callback) {
 
         var update_status = result[0].update_status;
@@ -98,28 +97,58 @@ function getStatus(params, result, callback) {
             // our data in db is updated, lets return it to the client
             // but first, lets create a virtual game for the player.
 
-            var isBetStarted = false;
+            //var isBetStarted = false;
             if (table_status == "BetStarted") {
+
+                // BetStarted can come in two ways:
+                // 1. Fresh - BetStarted with no GameId, meaning it's the first game the player plays
+                // 2. NewGame - BetStarted with GameId, meaning we need to close the last game, and open a new one.
+
+                // If it's Fresh:
                 // No action from the client is needed, we just open a new virtual game,
                 // and return the client gameId of it and more details.
 
-                isBetStarted = true;
+                // If it's NewGame:
+                // We need to Update the last game result, and continue as usual
+
+                if (typeof params.game_id != 'undefined') {
+                    // Meaning it's case 2: "NewGame" and not fresh, we update last game result
+                    gameEnded(params.oauth_uid, params.table_id, params.game_id,
+                        params.token, function(err, gameEndedParams) {
+                        if (err) {
+                            console.log(err);
+                            callback(err);
+                        } else {
+                            result[0]["last_winner_cards"] = gameEndedParams.last_winner_cards;
+                            result[0]["profit"] = gameEndedParams.profit;
+                        }
+                    });
+                }
+
+                //isBetStarted = true;
                 betStarted(params.table_id, function (err, gameId) {
                     if (err) {
                         console.log(err);
                         callback(err);
                     } else {
+
+                        // Adding the generated gameId to the result
                         result[0]["gameId"] = gameId;
                         callback(false, result[0]);
                     }
                 });
+            } else if (table_status == "BetEnded") {
+                // This case means the user did getStatus() while game is already running
+                // We need to reply him that he needs to wait
+                callback(false, result[0]);
             }
 
             // If it was BetStarted we need to open a game and return GameId
-            // Before returning gameStatus() to the client.
-            if (!isBetStarted) {
-                callback(false, result[0]);
-            }
+            // Before returning gameStatus() to the client, so we wait for betStarted() to finish
+            // and we callback from there.
+            //if (!isBetStarted) {
+            //    callback(false, result[0]);
+           // }
         } else if (update_status == "InProgress") {
             // Meaning some client already cause a query to nimi
             // we wait and then select data from DB again.
@@ -163,7 +192,7 @@ function betEnded(params, callback) {
     // - Updates the player chips balance in balance_tbl
     // - Updates baccarat_games_tbl status with: "BetEnded"
 
-    db.getGameId(params.game_id, function (err, gameId) {
+    db.getGameRecordById(params.game_id, function (err, gameId) {
         if (err) {
             console.log(err);
             callback(err);
@@ -210,27 +239,117 @@ function betEnded(params, callback) {
     });
 }
 
-function gameEnded(user_id, game_id, bet_result) {
+/**
+ *
+ * @param oauth_uid
+ * @param game_id
+ * @param table_id
+ * @param token
+ * @param callback
+ */
+function gameEnded(oauth_uid, table_id, game_id, token, callback) {
 
-    // Do the following:
-    // - Updates baccarat_games_tbl status with: "GameEnded"
-    // - Updates the bet record with the bet result
-    // - Updates the user's chips balance in balance_tbl
+    //var player_pair_ratio = 11;
+    //var banker_pair_ratio = 11;
 
-    db.updateGameStatus(game_id, "GameEnded");
-    db.updateABetWithResult(game_id,  bet_result);
+    // Get some information first:
+    // - Get the winner from LastGameResult
+    // - Get the user Bet from LastGame according to the last winner
+    // - Calculate Profit
 
-    var player_pair_ratio = 11;
-    var player_ratio = 1;
-    var tie_ratio = 8;
-    var banker_ratio = 0.95;
-    var banker_pair_ratio = 11;
-    
-    // TODO: calculate
-    var bet_profit;
+    db.getLastGameWinner(table_id, function (err, lastGameWinner) {
 
-    // If not, we need to calculate it by our self
-    db.updateChipsBalanceById(user_id, bet_profit);
+        if (err) {
+            console.log(err);
+            callback(err);
+        } else {
+            if (lastGameWinner.length == 0) {
+                callback(new Error("There was no lastWinner details, something is wrong."));
+            } else {
+                var lastWinner = lastGameWinner[0].last_winner;
+                var SplittedLastWinner = lastWinner.split(":");
+                var winnerType = SplittedLastWinner[0];
+                //var winnerCardValue = SplittedLastWinner[1];
+
+                db.getBetByGameIdAndTableId(game_id, table_id, function(err, betRecord) {
+                    if (err) {
+                        console.log(err);
+                        callback(err);
+                    } else {
+                        if (betRecord.length == 0) {
+                            callback(new Error("There was no bet Record for the given gameId"));
+                        } else {
+
+                            var calculatedProfit = 0;
+                            switch(winnerType)
+                            {
+                                case "B":
+                                    // Banker
+                                    var banker_ratio = 0.95;
+                                    calculatedProfit = betRecord[0].banker_bet * banker_ratio;
+                                    break;
+                                case "P":
+                                    // Player
+                                    var player_ratio = 1;
+                                    calculatedProfit = betRecord[0].player_bet * player_ratio;
+                                    break;
+                                case "T":
+                                    // Tie
+                                    var tie_ratio = 8;
+                                    calculatedProfit = betRecord[0].tie_bet * tie_ratio;
+                                    break;
+                            }
+
+                            // Now we do the following:
+                            // - Updates baccarat_games_tbl status with: "GameEnded"
+                            // - Updates the bet record with the bet result
+                            // - Updates the user's chips balance in balance_tbl
+
+                            db.updateGameStatus(game_id, "GameEnded", function(err) {
+                                if (err) {
+                                    console.log(err);
+                                    callback(err);
+                                } else {
+                                    db.updateABetWithResult(game_id,  winnerType, function (err) {
+                                        if (err) {
+                                            console.log(err);
+                                            callback(err);
+                                        } else {
+
+                                            db.getChipsBalanceById(oauth_uid, token, function(err, currentBalance) {
+
+                                                if (err) {
+                                                    console.log(err);
+                                                    callback(err);
+                                                } else {
+                                                    var updatedBalance = addChips(currentBalance, calculatedProfit);
+
+                                                    db.updateChipsBalanceById(oauth_uid, updatedBalance, function (err) {
+                                                        if (err) {
+                                                            console.log(err);
+                                                            callback(err);
+                                                        } else {
+
+                                                            var gameEndedParams = {
+                                                                last_winner_cards : lastWinner,
+                                                                profit : calculatedProfit
+                                                            };
+
+                                                            callback(false, gameEndedParams);
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        }
+    });
 }
 
 /**
