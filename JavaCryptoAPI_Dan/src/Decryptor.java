@@ -17,7 +17,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 /***
  * The Decryptor class decrypts the file generated initially by the encryptor class
- * @author DanB
+ * @author Gal Ringel 300922424
  *
  */
 public class Decryptor {
@@ -71,9 +71,7 @@ public class Decryptor {
 			if(! Decryptor.validateArguments(args, fileToDecrypt, decryptedFile, keyStoreFile, configFile))
 				return;
 
-			KeyStoreConfig keyStoreConfig = new KeyStoreConfig(keyStoreFile, keyStoreAlias, keyStorePassword);
-
-			if(!decryptor.init(keyStoreConfig, configFile))
+			if(!decryptor.init(keyStoreAlias, keyStorePassword, configFile))
 				return;
 			
 			//decrypt the file and print it to the specified output and to console.
@@ -142,7 +140,7 @@ public class Decryptor {
 	 * @param configFile - config file the encryptor created
 	 * @return
 	 */
-	private boolean init(KeyStoreConfig keyStoreConfig, File configFile) {
+	private boolean init(String keyStoreConfig, File configFile) {
 
 		return (loadKeyStore(keyStoreConfig) && LoadConfiguration(configFile));
 

@@ -6,6 +6,7 @@ import java.io.RandomAccessFile;
 import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.KeyStore.PrivateKeyEntry;
+import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -14,10 +15,14 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.UnrecoverableEntryException;
 import java.util.Properties;
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
@@ -56,6 +61,9 @@ public class Encryptor {
 	private static KeyStore keystore;
 
 
+	/**
+	 * 
+	 */
 	public Encryptor() {
 
 		// Initializes key generator with details regarding key algorithm and size
@@ -109,65 +117,100 @@ public class Encryptor {
 	 */
 	public static void main(String[] args) {
 
-		//check we received the necessary arguments
+		// We need to receive 5 arguments from the user
 		if(args.length < 5) {
 			System.out.println("Usage: <File To Encrypt Location> <Encrypted File Location> <Keystore Location> <Keystore Alias> <KeyStore Password>");
 			return;
 		}
 
+		// Inits Encryptor (Creates the key generator, cipher, IV...)
 		Encryptor encryptor = new Encryptor();
 
+		// Validate and store the given file to encrypt
 		File fileToEncrypt = new File(args[0]);
+		if(!fileToEncrypt.exists()) {
+			System.err.println("File to encrypt does not exist. Please validate its location and try again!");
+			return;
+		}
+		
+		// Validate and store the given file name to encrypt 
 		File encryptedFile = new File(args[1]);
+		if(encryptedFile.exists()) {
+			System.err.println("Deleting the file currently in location of encrypted file(" + args[1] + ")");
+			try {
+				encryptedFile.delete();
+			}
+			catch(Exception ex) {
+				System.err.println("Could acess or delete the encrypted file");
+				return;
+			}
+		}
+		
+		// Validate and store the given keyStroe
 		File keyStoreFile = new File(args[2]);
+		if(!keyStoreFile.exists()) {
+			System.err.println("Keystore file specified does not exist. Please validate its location and try again");
+			return;
+		}
+		
 		String keyStoreAlias = args[3];
 		String keyStorePassword = args[4];
-
-		if(!Encryptor.validateArguments(args, fileToEncrypt, encryptedFile, keyStoreFile)) {
-			return;
-		}
-			
-
-		KeyStoreConfig keyStoreConfig = new KeyStoreConfig(keyStoreFile, keyStoreAlias, keyStorePassword);
-
-		// Load and Initialize Key Store according to input parameters
-		if(!Encryptor.loadKeyStore(keyStoreConfig)) {
-			return;
-		}
-			
-
-		try
+		
+		try 
 		{
-			if(!Encryptor.encryptKey(keyStoreConfig)) {
-				return;
-			}
-				
+			// Load and Initialize Key Store according to input parameters
+			keystore = KeyStore.getInstance("JKS");
+			keystore.load(new FileInputStream(keyStoreFile), keyStorePassword.toCharArray());
+		} catch (Exception ex) {
+			System.err.println("Could not load the key store. Try checking the password. Error details: " + ex.getMessage());
+			return;
+		}
+			
+		try {
+			// Encrypet the private key
+			encryptor.keyEncryption(keyStoreAlias, keyStorePassword);
+		}
+		catch (Exception ex)
+		{
+			System.err.println("While trying to encrypt the key(assymetric encryption), encountered an error: " + ex.getMessage());
+			return;
+		}
+		
 
-			if(!encryptor.propegateSignatureForFile(fileToEncrypt, keyStoreConfig)) {
-				return;
-			}
-				
-
-			if(!Encryptor.EncryptFileContent(fileToEncrypt, encryptedFile)) {
-				return;
-			}
-
-			//now we write a configuration file as described in instructions for the decryptor to use
-			Encryptor.WriteConfigFile();
-
-			System.out.println("Successfully encrypted the file: " + fileToEncrypt);
-
+		try {
+			encryptor.generateDigitalSignatureForFile(fileToEncrypt, keyStoreAlias, keyStorePassword);
 		}
 		catch (Exception e) {
-			System.out.println(e.getMessage());
+			System.out.println("Error Signing File: " + e.getMessage());
+			return;
 		}
+			
+		try{
+			encryptor.Encrypt(fileToEncrypt, encryptedFile);
+		}
+		catch (IOException ex) {
+			System.err.println("Error Encrypting file. Details: " + ex.getMessage());
+		} 
+
+		//now we write a configuration file as described in instructions for the decryptor to use
+		try {
+			encryptor.WriteConfigFile();
+		}
+		catch (Exception ex) {
+			System.out.println("Could not write the configuration file! Error details: " + ex.getMessage());
+		}
+
+		
+		// Everything went well :)
+		System.out.println("Successfully encrypted the file: " + fileToEncrypt);
+
 	}
 	
 	/**
 	 * method writes all arguments needed for decryptor to a config file
+	 * @throws IOException 
 	 */
-	private static void WriteConfigFile() {
-		try {
+	private void WriteConfigFile() throws IOException {
 			FileOutputStream fos = new FileOutputStream("config.cfg");
 
 			Properties configFile = new Properties();
@@ -182,39 +225,40 @@ public class Encryptor {
 			configFile.setProperty("Signature", convertbytesToHexaString(resultSignature));
 
 			configFile.store(fos, null);
-		} catch (Exception e) {
-			
-			System.out.println("Could not write the configuration file! Error details: " + e.getMessage());
-		}
-
 	}
 	
 	/**
 	 * Method encrypts the private key using the public one
 	 * @param keyStoreConfig - info about the keystore
 	 * @return true if method succeeds. false otherwsie
+	 * @throws KeyStoreException 
+	 * @throws UnrecoverableEntryException 
+	 * @throws NoSuchAlgorithmException 
+	 * @throws InvalidKeyException 
+	 * @throws NoSuchPaddingException 
+	 * @throws BadPaddingException 
+	 * @throws IllegalBlockSizeException 
 	 */
-	private static boolean encryptKey(KeyStoreConfig keyStoreConfig) {
+	private void keyEncryption(String keyStoreAlias, String KeyStorePassword) throws NoSuchAlgorithmException,
+																					UnrecoverableEntryException,
+																					KeyStoreException, 
+																					InvalidKeyException, 
+																					NoSuchPaddingException, 
+																					IllegalBlockSizeException, 
+																					BadPaddingException {
 
-		try{
-
-			// Get entry and extract public key
-			PrivateKeyEntry entry = (PrivateKeyEntry) keystore.getEntry( keyStoreConfig.keyStoreAlias, 
-					new KeyStore.PasswordProtection(keyStoreConfig.keyStorePassword.toCharArray()));
+			// Extract the private key from the keyStore
+			PrivateKeyEntry entry = (PrivateKeyEntry) keystore.getEntry(keyStoreAlias, 
+					new KeyStore.PasswordProtection(KeyStorePassword.toCharArray()));
+			
+			// Extract the public key from the keyStore
 			PublicKey publicKey = entry.getCertificate().getPublicKey();
 
-			//get an instance of the RSA cypher and encrypt the key using the public key in the keystore
-			Cipher keyEncryptionCipher = Cipher.getInstance(KEY_ENCRYPTION_ALGORITHM); //Asymmetric
+			// Inits a RSA Cipher and encrypts the privateKey with the given publicKey
+			// Using Asymmetric. 
+			Cipher keyEncryptionCipher = Cipher.getInstance(KEY_ENCRYPTION_ALGORITHM); 
 			keyEncryptionCipher.init(Cipher.ENCRYPT_MODE, publicKey);
 			encryptedSecretKey = keyEncryptionCipher.doFinal(secretKey.getEncoded());
-		}
-		catch(Exception e )
-		{
-			System.out.println ("While trying to encrypt the key(assymetric encryption), encountered an error: " + e.getMessage());
-			return false;
-		}
-
-		return true;
 	}
 
 	/***
@@ -224,7 +268,7 @@ public class Encryptor {
 	 * @return true if succeeded. False otherwise
 	 * @throws IOException - IF we encountered an error with closing the streams
 	 */
-	private static boolean EncryptFileContent(File fileToEncrypt, File encryptedFile) throws IOException 
+	private void Encrypt(File fileToEncrypt, File encryptedFile) throws IOException 
 	{
 		//we initialize out of the try to close them in a finally block
 		CipherOutputStream outputStream = null;
@@ -245,43 +289,74 @@ public class Encryptor {
 				outputStream.write(buffer, 0, readBytes);
 			}
 
-		} catch(Exception e) {
-
-			System.out.println("Error Encrypting file. Details: " + e.getMessage());
-			return false;
-
+		} catch (IOException ex) {
+			throw ex;
 		} finally {
-
 			if (inputStream != null) {
 				inputStream.close();
 			}
+			
 			if (outputStream != null) {
 				outputStream.close();
 			}
 		}
-
-		return true;
 	}
 
 	/**
-	 * Method creates an instance of the key store according to input parameters
-	 * @param keyStoreConfig - input parameters relating to the key store
-	 * @return true if the key store has been loaded correctly. False otherwise
+	 * method creates the signature for the encrypted file
+	 * 
+	 * @param fileToEncrypt - file we encrypt
+	 * @param keyStoreConfig - keystore info
+	 * @throws NoSuchAlgorithmException 
+	 * @throws KeyStoreException 
+	 * @throws UnrecoverableEntryException 
+	 * @throws SignatureException 
+	 * @throws NoSuchProviderException 
+	 * @throws InvalidKeyException 
 	 */
-	private static boolean loadKeyStore(KeyStoreConfig keyStoreConfig) 
-	{
-		try 
-		{
-			keystore = KeyStore.getInstance("JKS");
-			keystore.load(new FileInputStream(keyStoreConfig.keyStoreFile), keyStoreConfig.keyStorePassword.toCharArray());
-			return true;
+	private void generateDigitalSignatureForFile(File fileToEncrypt, String keyStoreAlias, String keyStorePassword ) throws NoSuchAlgorithmException, UnrecoverableEntryException, KeyStoreException, InvalidKeyException, NoSuchProviderException, SignatureException {
 
-		} catch (Exception e) {
-			System.out.println("Could not load the key store. Try checking the password. Error details: " + e.getMessage());
-			return false;
-		}
+			//Read file's Bytes
+			byte[] fileToEncryptBytes = FileToBytes(fileToEncrypt);
+
+			if(fileToEncrypt == null) {
+				throw new IllegalAccessError("The given file To Encrypt was empty");
+			}
+
+			//create a digest
+			MessageDigest messageDigest = MessageDigest.getInstance(DIGEST_ALGORITHM);
+			messageDigest.update(fileToEncryptBytes);
+
+
+			// Get entry from keystore and create the private key for signature
+			PrivateKeyEntry keyEntry = (PrivateKeyEntry) keystore.getEntry(keyStoreAlias, 
+					new KeyStore.PasswordProtection(keyStorePassword.toCharArray()));
+			PrivateKey privateKey = keyEntry.getPrivateKey();
+
+			createSignature(privateKey, messageDigest.digest());
 	}
+	
+	/**
+	 * method signs the file
+	 * 
+	 * @param privateKey - private key we will use for signature
+	 * @param fileDigest - file digest to encrypt
+	 * @throws NoSuchAlgorithmException - could not find algorithm (will not get here)
+	 * @throws NoSuchProviderException - could not find provider (will not get here)
+	 * @throws InvalidKeyException - bad key (will not get here)
+	 * @throws SignatureException
+	 */
+	private static void createSignature(PrivateKey privateKey, byte[] fileDigest) 
+			throws NoSuchAlgorithmException, NoSuchProviderException,InvalidKeyException, SignatureException {
 
+		Signature signatureGenerator = Signature.getInstance(SIGNATURE_ALGORITHM);
+		signatureGenerator.initSign(privateKey);
+		signatureGenerator.update(fileDigest);
+
+		// sign the digest
+		resultSignature = signatureGenerator.sign();
+	}
+	
 	/***
 	 * Retrieves a file's bytes
 	 * @param file - input file to retrieve bytes for
@@ -302,101 +377,6 @@ public class Encryptor {
 			System.out.println("Error reading encrypted file. Error Details: " + e.getMessage());
 			return null;
 		}
-	}
-	
-	/**
-	 * method creates the signature for the encrypted file
-	 * @param fileToEncrypt - file we encrypt
-	 * @param keyStoreConfig - keystore info
-	 * @return
-	 */
-	private boolean propegateSignatureForFile(File fileToEncrypt, KeyStoreConfig keyStoreConfig ) {
-
-		try{
-
-			//Read file's Bytes
-			byte[] fileToEncryptBytes = FileToBytes(fileToEncrypt);
-
-			if(fileToEncrypt == null) {
-				return false;
-			}
-
-			//create a digest
-			MessageDigest messageDigest = MessageDigest.getInstance(DIGEST_ALGORITHM);
-			messageDigest.update(fileToEncryptBytes);
-
-
-			// Get entry from keystore and create the private key for signature
-			PrivateKeyEntry keyEntry = (PrivateKeyEntry) keystore.getEntry(keyStoreConfig.keyStoreAlias, 
-					new KeyStore.PasswordProtection(keyStoreConfig.keyStorePassword.toCharArray()));
-			PrivateKey privateKey = keyEntry.getPrivateKey();
-
-			createSignature(privateKey, messageDigest.digest());
-
-			return true;
-
-		} catch (Exception e) {
-			System.out.println("Error Signing File: " + e.getMessage());
-			return false;
-		}
-	}
-	
-	/**
-	 * method signs the file
-	 * @param privateKey - private key we will use for signature
-	 * @param fileDigest - file digest to encrypt
-	 * @throws NoSuchAlgorithmException - could not find algorithm (will not get here)
-	 * @throws NoSuchProviderException - could not find provider (will not get here)
-	 * @throws InvalidKeyException - bad key (will not get here)
-	 * @throws SignatureException
-	 */
-	private void createSignature(PrivateKey privateKey, byte[] fileDigest) 
-			throws NoSuchAlgorithmException, NoSuchProviderException,InvalidKeyException, SignatureException {
-
-		Signature signatureGenerator = Signature.getInstance(SIGNATURE_ALGORITHM);
-		signatureGenerator.initSign(privateKey);
-		signatureGenerator.update(fileDigest);
-
-		//sign the digest
-		resultSignature = signatureGenerator.sign();
-	}
-	
-	/**
-	 * method validates the encryptor receives all necessary arguments for encryption
-	 * @param args - received arguments
-	 * @param fileToEncrypt - file we need to encrypt
-	 * @param encryptedFile - location to save the result of encryption
-	 * @param keyStoreFile - key store location
-	 * @return
-	 */
-	private static boolean validateArguments(String[] args, File fileToEncrypt, File encryptedFile, File keyStoreFile) {
-
-		System.out.println("Validating Input Arguments");
-
-		if(! fileToEncrypt.exists()) {
-			System.out.println("File to encrypt does not exist. Please validate its location and try again!");
-			return false;
-		}
-
-		if(encryptedFile.exists()) {
-			System.out.println("Deleting the file currently in location of encrypted file(" + args[1] + ")");
-
-			try{
-
-				encryptedFile.delete();
-			}
-			catch(Exception e) {
-				System.out.println("Could not delete the encrypted file");
-				return false;
-			}
-		}
-
-		if(! keyStoreFile.exists()) {
-			System.out.println("Keystore file specified does not exist. Please validate its location and try again");
-			return false;
-		}
-
-		return true;
 	}
 	
 	/**
