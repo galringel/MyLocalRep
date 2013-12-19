@@ -410,8 +410,10 @@ function updateLoggedUsersActionDate(oauth_uid, token, callback) {
  * @param game_id
  * @param game_status
  * @param callback
+ * @param cards
+ * @param winner
  */
-function updateGameStatus(game_id, game_status, callback) {
+function updateGameStatus(game_id, game_status, cards, winner, callback) {
 
     mysqlPool.getConnection(function (err, connection) {
         if (err)  {
@@ -420,8 +422,9 @@ function updateGameStatus(game_id, game_status, callback) {
         } else {
 
             // Updating the game id status
-            var sqlUpdateGameStatus = "UPDATE baccarat_games_tbl SET game_status = ? WHERE game_id = ?";
-            connection.query(sqlUpdateGameStatus, [game_status, game_id], function(err) {
+            var sqlUpdateGameStatus = "UPDATE baccarat_games_tbl " +
+                "SET game_status = ?, game_result_cards = ?, game_winner = ? WHERE game_id = ?";
+            connection.query(sqlUpdateGameStatus, [game_status, cards, winner, game_id], function(err) {
 
                 connection.release();
                 if (err) {
@@ -477,10 +480,11 @@ function insertANewBet(params, callback) {
  * Update the bet after the game is finished with the result:
  * "P" = Player, "T" = Tie, "B" = "Banker"
  * @param game_id
- * @param bet_result
  * @param callback
+ * @param winner
+ * @param profit
  */
-function updateABetWithResult(game_id, bet_result, callback) {
+function updateABetWithResult(game_id, winner, profit, callback) {
 
     mysqlPool.getConnection(function (err, connection) {
         if (err)  {
@@ -488,8 +492,8 @@ function updateABetWithResult(game_id, bet_result, callback) {
             callback(err);
         } else {
             // Updating the game id status
-            var sqlUpdateBetResult = "UPDATE baccarat_bets_tbl SET bet_result = ? WHERE game_id = ?";
-            connection.query(sqlUpdateBetResult, [bet_result, game_id], function(err) {
+            var sqlUpdateBetResult = "UPDATE baccarat_bets_tbl SET winner = ?, profit = ? WHERE game_id = ?";
+            connection.query(sqlUpdateBetResult, [winner, profit, game_id], function(err) {
 
                 connection.release();
                 if (err) {
@@ -547,15 +551,12 @@ function getChipsBalanceById(user_id, token, callback) {
  */
 function updateChipsBalanceById(oauth_uid, value, callback) {
 
-        console.log("updateChipsBalanceById");
-        // calculate new balance
         mysqlPool.getConnection(function (err, connection) {
             if (err)  {
                 console.log(err);
                 callback(err);
             } else {
-                // Updating token and last_entered date
-                var sqlUpdateFields = "UPDATE balance_info_tbl SET balance=? WHERE oauth_uid=?";
+                var sqlUpdateFields = "UPDATE balance_info_tbl SET balance = ? WHERE oauth_uid = ?";
                 connection.query(sqlUpdateFields, [value, oauth_uid], function(err) {
 
                     connection.release();
@@ -860,14 +861,14 @@ function insertANewFacebookUser(profile, user_agent, callback) {
     });
 }
 
-function getLastGameWinner(table_id, callback) {
+function getLastGameWinnerAndCards(table_id, callback) {
 
     mysqlPool.getConnection(function (err, connection) {
         if (err)  {
             console.log(err);
             callback(err);
         } else {
-            var sqlGetLastGameWinner = "SELECT last_winner FROM baccarat_status WHERE table_id=?";
+            var sqlGetLastGameWinner = "SELECT last_winner, last_game_cards FROM baccarat_status WHERE table_id=?";
             connection.query(sqlGetLastGameWinner,[table_id], function (err, result) {
 
                 connection.release();
@@ -890,7 +891,7 @@ function getBetByGameIdAndTableId (game_id, table_id, callback) {
             console.log(err);
             callback(err);
         } else {
-            var sqlGetTableStatus = "SELECT * FROM baccarat_bets_tbl WHERE table_id = ? and gameId = ?";
+            var sqlGetTableStatus = "SELECT * FROM baccarat_bets_tbl WHERE table_id = ? and game_id = ?";
             connection.query(sqlGetTableStatus,[table_id, game_id], function (err, result) {
 
                 connection.release();
@@ -957,7 +958,7 @@ exports.getOpenTables = getOpenTables;
 exports.createANewGame = createANewGame;
 exports.updateGameStatus = updateGameStatus;
 exports.getGameRecordById = getGameRecordById;
-exports.getLastGameWinner = getLastGameWinner;
+exports.getLastGameWinnerAndCards = getLastGameWinnerAndCards;
 
 // Bets actions
 exports.insertANewBet = insertANewBet;

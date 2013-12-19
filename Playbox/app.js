@@ -189,10 +189,16 @@ app.get('/games/getBaccaratTableStatus', ensureAuthenticated, function (req, res
 
         res.json({'ERROR' : 'Bad GET parameters! expected: token, table_id'});
     } else {
+
         var params = {
             token : req.query.token,
             table_id : req.query.table_id
         };
+
+        // Adding game_id parameter if sent.
+        if (req.query.hasOwnProperty("game_id")) {
+            params["game_id"] = req.query.game_id;
+        }
 
         rAPI.getBaccaratTableStatus(params, res);
     }
