@@ -2,33 +2,29 @@
 	<reminder id="gal.ringel@gmail.com">
 		<reminderInfo id="1">
 			<reminderTitle>reminder 1</reminderTitle>
+			<reminderBody>Reminder Body 1</reminderBody>
 			<reminderCreationDate>21/12/2013 14:10:22</reminderCreationDate>
-			<reminderSubject>Reminder Subject 1</reminderSubject>
-			<reminderSendingDate>23/12/2013</reminderSendingDate>
-			<reminderSendingTime>14:10:22</reminderSendingTime>
+			<reminderSendingDate>23/12/2013 14:10:22</reminderSendingDate>
 		</reminderInfo>
 		<reminderInfo id="2">
 			<reminderTitle>reminder 2</reminderTitle>
+			<reminderBody>Reminder Body 2</reminderBody>
 			<reminderCreationDate>21/12/2013 14:10:22</reminderCreationDate>
-			<reminderSubject>Reminder Subject 2</reminderSubject>
-			<reminderSendingDate>23/12/2013</reminderSendingDate>
-			<reminderSendingTime>14:10:22</reminderSendingTime>
+			<reminderSendingDate>23/12/2013 14:10:22</reminderSendingDate>
 		</reminderInfo>
 	</reminder>
 	<reminder id="omri.hering@gmail.com">
-		<reminderInfo id="1">
-			<reminderTitle>reminder 1</reminderTitle>
+		<reminderInfo id="3">
+			<reminderTitle>reminder 3</reminderTitle>
+			<reminderBody>Reminder Body 3</reminderBody>
 			<reminderCreationDate>21/12/2013 14:10:22</reminderCreationDate>
-			<reminderSubject>Reminder Subject 1</reminderSubject>
-			<reminderSendingDate>23/12/2013</reminderSendingDate>
-			<reminderSendingTime>14:10:22</reminderSendingTime>
+			<reminderSendingDate>23/12/2013 14:10:22</reminderSendingDate>
 		</reminderInfo>
-		<reminderInfo id="2">
-			<reminderTitle>reminder 2</reminderTitle>
+		<reminderInfo id="4">
+			<reminderTitle>reminder 4</reminderTitle>
+			<reminderBody>Reminder Body 4</reminderBody>
 			<reminderCreationDate>21/12/2013 14:10:22</reminderCreationDate>
-			<reminderSubject>Reminder Subject 2</reminderSubject>
-			<reminderSendingDate>23/12/2013</reminderSendingDate>
-			<reminderSendingTime>14:10:22</reminderSendingTime>
+			<reminderSendingDate>23/12/2013 14:10:22</reminderSendingDate>
 		</reminderInfo>
 	</reminder>	
 </reminders_db>

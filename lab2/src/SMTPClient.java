@@ -178,7 +178,7 @@ public class SMTPClient {
 	 */
 	private void QUIT() throws Exception, IOException {
 		// Ends the connection
-		sendSmtpCommand("QUIT");
+		sendSmtpCommand("quit");
 		getSmtpResponse();
 	}
 
@@ -295,9 +295,9 @@ public class SMTPClient {
 			_smtpOutputStream.writeBytes(command + CRLF);
 			_smtpOutputStream.flush();
 			
-			// We sleep for 100 mili to make sure the command will arrive to server
+			// We sleep for 300 mili to make sure the command will arrive to server
 			// before we continue
-			Thread.sleep(100);
+			Thread.sleep(300);
 			
 		} catch (IOException ex) {
 			throw new Exception("ERROR: Could not read from input stream! Exception: " + ex);

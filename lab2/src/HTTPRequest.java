@@ -160,7 +160,6 @@ public class HTTPRequest extends HTTPMessage {
 					
 					String exceptionString = "ERROR: could not parse parameter value as utf-8" + ex.getMessage();
 					System.err.println(exceptionString);
-					ServerLogger.getInstance().getLogger().info(exceptionString);
 				}
 			}
 		}
@@ -264,7 +263,6 @@ public class HTTPRequest extends HTTPMessage {
 			
 			String exceptionString = "ERROR: Request is bad. closing connection!" + ex.getMessage();
 			System.err.println(exceptionString);
-			ServerLogger.getInstance().getLogger().info(exceptionString);
 			return false;
 		}
 	}

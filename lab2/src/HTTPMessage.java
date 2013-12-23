@@ -137,7 +137,6 @@ public class HTTPMessage {
 		} catch (IOException ex) {
 			String exceptionString = "ERROR: could not parse headers" + ex.getMessage();
 			System.err.println(exceptionString);
-			ServerLogger.getInstance().getLogger().info(exceptionString);
 		}
 	}
 
@@ -183,7 +182,6 @@ public class HTTPMessage {
 		} catch (Exception ex) {
 			String exceptionString = "ERROR: could not the body" + ex.getMessage();
 			System.err.println(exceptionString);
-			ServerLogger.getInstance().getLogger().info(exceptionString);
 			return false;
 		}
 	}

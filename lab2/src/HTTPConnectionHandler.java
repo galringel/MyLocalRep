@@ -2,6 +2,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Socket;
+import java.util.ArrayList;
 
 /**
  * This class handle a single connection:
@@ -82,7 +83,6 @@ public class HTTPConnectionHandler implements Runnable {
 				
 				// Logs the GET header
 				System.out.println(req.getRequestTitle());
-				ServerLogger.getInstance().getLogger().info(req.getRequestTitle());
 				
 				if (req.method.equals(HTTPRequest.Method.GET) ||
 						req.method.equals(HTTPRequest.Method.HEAD)) {
@@ -106,7 +106,6 @@ public class HTTPConnectionHandler implements Runnable {
 				
 				// Logs the HTTP Response line
 				System.out.print(response.buildResponseFirstHeader());
-				ServerLogger.getInstance().getLogger().info(response.buildResponseFirstHeader());
 				
 				// If it was HEAD request, we delete response body.
 				if (req.method.equals(HTTPRequest.Method.HEAD)) {
@@ -178,6 +177,8 @@ public class HTTPConnectionHandler implements Runnable {
 		boolean isOurServerCookieExists = false;
 		String currentLoggedUsername = null;
 		byte[] contentBytes;
+		
+		ReminderDatabase reminderDatabase = ReminderDatabase.getInstance(_defaultRoot);
 		
 		// Searching for our cookie
 		String cookieValue = req.getHeader("Cookie");
@@ -252,11 +253,31 @@ public class HTTPConnectionHandler implements Runnable {
 				
 			if (isOurServerCookieExists) {
 				// Cookie exists, we show reminders.html page
-				//contentBytes = HTTPUtils.getFileBytes(pagePath + req.path);
+				
+				ArrayList<ReminderInfo> reminders = reminderDatabase.getRemindersInfoDB().get(currentLoggedUsername);
+				String reminderHTMLBody = Reminder.BuildReminderHTML(currentLoggedUsername, reminders);
+				
+				response.setHeader("content-type", "text/html");
+				response.generate200OK(reminderHTMLBody.getBytes());
+			} else {
+				// cookie does not exists we redirect to index.html
+				response.generate301("index.html");
+				response.setHeader("content-length", null);
+			}
+			
+		} else if (req.path.equals("/reminder_editor.html")) {
+			
+			if (isOurServerCookieExists) {
+				// Cookie exists, we show reminders.html page
+		
+				ArrayList<ReminderInfo> reminders = reminderDatabase.getRemindersInfoDB().get(currentLoggedUsername);
+				String reminderEditorHTML = Reminder.BuildReminderEditorHTML(currentLoggedUsername, reminders);
+				response.setHeader("content-type", "text/html");
+				response.generate200OK(reminderEditorHTML.getBytes());
+				
+				
 				//response.setHeader("content-type", "text/html");
-				Reminder reminder = new Reminder(pagePath, currentLoggedUsername);
-				String reminderHTMLBody = reminder.BuildHTML();
-				//response.generate200OK(contentBytes);
+				//response.generate200OK(reminderHTMLBody.getBytes());
 			} else {
 				// cookie does not exists we redirect to index.html
 				response.generate301("index.html");
@@ -313,7 +334,6 @@ public class HTTPConnectionHandler implements Runnable {
 		// Logs the exception
 		String exceptionString = "ERROR: some error occured! closing connection..." + ex.getMessage();
 		System.err.println(exceptionString);
-		ServerLogger.getInstance().getLogger().info(exceptionString);
 		
 		// Generate 500 response and closes the stream
 		response.generate500();
@@ -325,7 +345,6 @@ public class HTTPConnectionHandler implements Runnable {
 			
 			exceptionString = "ERROR: Could not close the connection proerply: " + ex1.getMessage();
 			System.err.println(exceptionString);
-			ServerLogger.getInstance().getLogger().info(exceptionString);
 		}
 	}
 }

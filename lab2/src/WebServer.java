@@ -1,7 +1,8 @@
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.*;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
@@ -36,6 +37,9 @@ public final class WebServer {
 	
 	/** An executor handling all the clients requests. */
 	private static Executor threadPool;
+	
+	// Will hold the reminder database on memory
+	private static ReminderDatabase _reminderDatabase;
 
 	
 	/**
@@ -49,33 +53,30 @@ public final class WebServer {
 			parseConfigIni();
 			System.out.println("LOGGER: config.ini was loaded successfully");
 			
-			// BONUS: If config.ini set the logger to be on, we create it
-			ServerLogger.getInstance().getLogger().info("LOGGER: config.ini was loaded successfully");
-			
 			// Init the blocking queue and the thread pool
 			blockingQueue = new LinkedBlockingQueue<Runnable>();
 			threadPool = new ThreadPoolExecutor(_maxThreads, _maxThreads, Integer.MAX_VALUE, TimeUnit.MILLISECONDS, blockingQueue);
+			
+			LoadDatabase(_rootFolder);
+			
+			// TODO: check if there is reminders that we need to sends
 
 		} catch (NumberFormatException ex) {
 			String exceptionString = "ERROR: Problem Initiazlie parameters. Exception details: " + ex.getMessage();
 			System.err.println(exceptionString);
-			ServerLogger.getInstance().getLogger().info(exceptionString);
 			return;
 		} catch (FileNotFoundException ex) {
 			String exceptionString = "ERROR: config.ini file missing! Please place it in the \"src\\\" folder of the project. " +
 					"\nException details: " + ex.getMessage();
 			System.err.println(exceptionString);
-			ServerLogger.getInstance().getLogger().info(exceptionString);
 			return;
 		} catch (IOException ex) {
 			String exceptionString = "ERROR: Problem parsing config.ini. Exception details: " + ex.getMessage(); 
 			System.err.println(exceptionString);
-			ServerLogger.getInstance().getLogger().info(exceptionString);
 			return;
 		} catch (Exception ex) {
 			String exceptionString = "ERROR: General Exception was cought. Exception details: " + ex.getMessage();
 			System.err.println(exceptionString);
-			ServerLogger.getInstance().getLogger().info(exceptionString);
 			return;
 		}
 		try {
@@ -83,17 +84,14 @@ public final class WebServer {
 			// Logs
 			String msg = "Server is up and running on port: " + _serverPort;
 			System.err.println(msg);
-			ServerLogger.getInstance().getLogger().info(msg);
 
 		} catch (IOException ex) {
 			String exceptionString = "ERROR: Can't listen to Socket. Exception details: " + ex.getMessage();
 			System.err.println(exceptionString);
-			ServerLogger.getInstance().getLogger().info(exceptionString);
 			return;
 		} catch (Exception ex) {
 			String exceptionString = "ERROR: Can't listen to Socket. Exception details: " + ex.getMessage();
 			System.err.println(exceptionString);
-			ServerLogger.getInstance().getLogger().info(exceptionString);
 			return;
 		}
 		
@@ -104,7 +102,6 @@ public final class WebServer {
 				// Accept incoming connection
 				Socket connectionSocket = _serverSocket.accept();
 				System.out.println("A new connection accepted succesfully!");
-				ServerLogger.getInstance().getLogger().info("A new connection accepted succesfully!");
 				
 				// Create a new connectionHandler
 				HTTPConnectionHandler currentClient = new HTTPConnectionHandler(connectionSocket, _defaultPage, _rootFolder);
@@ -116,16 +113,20 @@ public final class WebServer {
 				* If we passed _maxThreads, new connections will be added to this queue,
 				* and will be printed to console in order to know how many pending connections there are */
 				System.out.println("Current Queue Size: " + blockingQueue.size());
-				ServerLogger.getInstance().getLogger().info("Current Queue Size: " + blockingQueue.size());
 
 			} catch (Exception ex) {
 				
 				String exceptionString = "ERROR: Could not accept a new connection. waiting for a new one...\n" + 
 						"Exception Details: " + ex.getMessage();
 				System.err.println(exceptionString);
-				ServerLogger.getInstance().getLogger().info(exceptionString);
 			}
 		}
+	}
+
+	private static void LoadDatabase(String rootFolder) {
+		
+		// Load the xml and serialize it
+		_reminderDatabase = ReminderDatabase.getInstance(rootFolder);
 	}
 
 	/**
