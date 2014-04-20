@@ -54,9 +54,10 @@ function CreateMySqlConnectionPool() {
     mysql = require('mysql');
     mysqlPool  = mysql.createPool({
         host     : 'localhost',
+        port     : 8889,
         user     : 'root',
-        password : 'pring-1',
-        database : 'Playbox',
+        password : 'RetinaEsh',
+        database : 'playbox',
         waitForConnections : true,
         connectionLimit : 10,
         queueLimit : 0
@@ -801,6 +802,7 @@ function insertANewFacebookUser(profile, user_agent, callback) {
     mysqlPool.getConnection(function (err, connection) {
         if (err)  {
             console.log(err);
+            console.log(err.stack);
             callback(err);
         } else {
             var sqlGetUserQuery = "SELECT fb_id, oauth_uid FROM users_tbl WHERE fb_id=?";

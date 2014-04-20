@@ -304,9 +304,9 @@ app.get('/logout', function(req, res){
 });
 
 process.on('uncaughtException', function (err) {
-    console.error('An uncaughtException was found, the program will end.');
-    //hopefully do some logging.
-    process.exit(1);
+    console.error((new Date).toUTCString() + ' uncaughtException:', err.message)
+    console.error(err.stack)
+    process.exit(1)
 });
 
 process.on('SIGTERM', function () {
